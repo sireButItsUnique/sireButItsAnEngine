@@ -37,7 +37,8 @@ using namespace std;
 #define ll long long
 #define white false
 #define black true
-#define DOUBLE_INF 1000000000
+#define DOUBLE_INF numeric_limits<double>::infinity
+#define KING_DEAD 1e10
 
 #define TO_SQUARE(col, row) 8 * (row - '1') + 7 - (col - 'a')
 #define TO_ALGEBRA(sq) string(1, 'a' + (7 - (sq % 8))) + string(1, '1' + (sq / 8))

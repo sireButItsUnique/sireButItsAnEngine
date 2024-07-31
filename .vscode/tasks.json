@@ -1,0 +1,21 @@
+{
+    "tasks": [
+        {
+            "label": "Build Engine",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "C:/Project/bongcloud-engine/engine/*.cpp",
+                "-march=native",
+                "-mtune=native",
+                "-o",
+                "engine.exe"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}

@@ -1,6 +1,7 @@
 #include "Board.hpp"
 #include "Eval.hpp"
 #include "MoveGen.hpp"
+#include "Search.hpp"
 #include "includes.hpp"
 
 using namespace std;
@@ -9,6 +10,7 @@ int main() {
 	string input;
 	MoveGen *moveGen = new MoveGen();
 	Eval *evaluator = new Eval();
+	Search *searcher = new Search();
 	Board *board = new Board(moveGen);
 
 	cin >> input;
@@ -23,9 +25,9 @@ int main() {
 			cin >> move;
 			board->movePiece(move);
 		} else if (input == "lichesseval") {
-			int tmp, ply = 4;
+			int ply = 4;
 			double eval;
-			Move bestMove = evaluator->getBestMove(board, ply, eval, tmp);
+			Move bestMove = searcher->getBestMove(board, ply, eval, evaluator);
 			if (bestMove.from() == 16 && bestMove.to() == 16) {
 				cout << "enginemove itFuckedItself " << eval << " " << endl;
 			} else {
@@ -38,12 +40,12 @@ int main() {
 		// human interface
 		else {
 			if (input == "eval") {
-				int tmp, ply;
+				int ply;
 				double eval;
 				cin >> ply;
 
 				if (ply) {
-					Move bestMove = evaluator->getBestMove(board, ply, eval, tmp, true);
+					Move bestMove = searcher->getBestMove(board, ply, eval, evaluator);
 
 					cout << BOLD << "Best Move:\n" << UNBOLD;
 					cout << bestMove.toAlgebra(true) << endl;

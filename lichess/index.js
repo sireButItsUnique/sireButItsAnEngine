@@ -216,6 +216,7 @@ async function listenEvents() {
 	req.end();
 }
 
+console.log(process.env.API_TOKEN)
 listenEvents();
 
 // weird rules to use for engine:

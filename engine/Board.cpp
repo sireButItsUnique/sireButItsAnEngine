@@ -193,7 +193,7 @@ void Board::genMoves(bool debug) {
 
 bool Board::inCheck(bool color) {
 	this->genAttackBoard(!color);
-	return (this->colorBoards[kingWhite + color] & this->attackBoards[!color]);
+	return (this->pieceBoards[kingWhite + color] & this->attackBoards[!color]);
 }
 
 bool Board::isMoveLegal(Move *move) {
