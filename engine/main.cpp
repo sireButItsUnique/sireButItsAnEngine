@@ -59,5 +59,9 @@ int main() {
             }
 
         }
+
+        else if (cmd == "d") {
+            board.print();
+        }
     }
 }

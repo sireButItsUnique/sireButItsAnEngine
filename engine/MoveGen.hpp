@@ -11,17 +11,17 @@ namespace MoveGen {
 	 * @param square what square the piece is on
 	 * @param direction north starts at 0, numbers increase w/ clockwise rotation
 	 */
-    uint64_t rayAttacks[64][8];
-	uint64_t rookRays[64];
-	uint64_t bishopRays[64];
+    extern uint64_t rayAttacks[64][8];
+	extern uint64_t rookRays[64];
+	extern uint64_t bishopRays[64];
 
-	uint64_t rookLookupOffsets[64];
-	uint64_t bishopLookupOffsets[64];
+	extern uint64_t rookLookupOffsets[64];
+	extern uint64_t bishopLookupOffsets[64];
 
-	uint64_t rookLookup[102400];
-	uint64_t bishopLookup[5248];
-	uint64_t knightLookup[64];
-	uint64_t kingLookup[64];
+	extern uint64_t rookLookup[102400];
+	extern uint64_t bishopLookup[5248];
+	extern uint64_t knightLookup[64];
+	extern uint64_t kingLookup[64];
     
     /**
      * @brief Initializes the ray attacks and lookup tables

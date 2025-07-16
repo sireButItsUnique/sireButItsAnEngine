@@ -1,6 +1,20 @@
 #include "MoveGen.hpp"
 using namespace MoveGen;
 
+namespace MoveGen {
+	uint64_t rayAttacks[64][8];
+	uint64_t rookRays[64];
+	uint64_t bishopRays[64];
+
+	uint64_t rookLookupOffsets[64];
+	uint64_t bishopLookupOffsets[64];
+
+	uint64_t rookLookup[102400];
+	uint64_t bishopLookup[5248];
+	uint64_t knightLookup[64];
+	uint64_t kingLookup[64];
+}
+
 /***
 Sliding Attack Generation Functions (note: probably backwards because of endian, but it works bc symmetry)
 ***/
