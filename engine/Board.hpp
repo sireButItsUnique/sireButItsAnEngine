@@ -20,26 +20,31 @@ public:
 	 *
 	 * @param board pointer to the board to copy
 	 */
-	inline void setCopyBoard(Board* board);
+	void setCopyBoard(Board* board);
 
 	/**
 	 * @brief sets bitboards to standard starting pos
 	 *
 	 * @param moveGen helper class used to generate pseudo legal moves
 	 */
-	inline void setStartingPos();
+	void setStartingPos();
 
 	/**
 	 * @brief sets bitboards to pos given by FEN string
 	 *
 	 * @param fen string representing the position in FEN format
 	 */
-	inline void setFenPos(string fen);
+	void setFenPos(string fen);
 
 	/**
 	 * @brief move piece in standard piece bitboards
 	 *
 	 * @param move move to make
 	 */
-	inline void movePiece(uint32_t move);
+	void movePiece(uint32_t move);
+
+	/**
+	 * @brief prints the board to stdout
+	 */
+	void print();
 };

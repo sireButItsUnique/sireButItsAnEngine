@@ -28,7 +28,7 @@ void MoveGen::genKnightMoves(Board& board, vector<uint32_t>& moves, bool color) 
 		// iterate over end positions
 		while (knight) {
 			uint8_t to = _tzcnt_u64(knight);
-            uint32_t move;
+            uint32_t move = 0;
             Move::setColor(move, color);
             Move::setPosition(move, from, to);
 			moves.push_back(move);
@@ -50,7 +50,7 @@ void MoveGen::genKingMoves(Board& board, vector<uint32_t>& moves, bool color) {
 	// iterate over end positions
 	while (king) {
 		uint8_t to = _tzcnt_u64(king);
-		uint32_t move;
+		uint32_t move = 0;
         Move::setColor(move, color);
         Move::setPosition(move, from, to);
         moves.push_back(move);
@@ -77,7 +77,7 @@ void MoveGen::genBishopMoves(Board& board, vector<uint32_t>& moves, bool color) 
 		// iterate over end positions
 		while (bishop) {
 			uint8_t to = _tzcnt_u64(bishop);
-			uint32_t move;
+			uint32_t move = 0;
             Move::setColor(move, color);
             Move::setPosition(move, from, to);
             moves.push_back(move);
@@ -106,7 +106,7 @@ void MoveGen::genRookMoves(Board& board, vector<uint32_t>& moves, bool color) {
 		// iterate over end positions
 		while (rook) {
 			uint8_t to = _tzcnt_u64(rook);
-			uint32_t move;
+			uint32_t move = 0;
             Move::setColor(move, color);
             Move::setPosition(move, from, to);
             moves.push_back(move);
@@ -138,7 +138,7 @@ void MoveGen::genQueenMoves(Board& board, vector<uint32_t>& moves, bool color) {
 		// iterate over end positions
 		while (queen) {
 			uint8_t to = _tzcnt_u64(queen);
-			uint32_t move;
+			uint32_t move = 0;
             Move::setColor(move, color);
             Move::setPosition(move, from, to);
             moves.push_back(move);
@@ -189,7 +189,7 @@ void MoveGen::genPawnMoves(Board& board, vector<uint32_t>& moves, bool color) { 
 		while (pawn) {
 			uint8_t to = _tzcnt_u64(pawn);
 			if (to >= 56 || to <= 7) {
-                uint32_t move;
+                uint32_t move = 0;
                 Move::setColor(move, color);
                 Move::setPosition(move, from, to);
                 Move::setPromotion(move, QUEEN);
@@ -201,7 +201,7 @@ void MoveGen::genPawnMoves(Board& board, vector<uint32_t>& moves, bool color) { 
                 Move::setPromotion(move, BISHOP);
                 moves.push_back(move);
 			} else {
-				uint32_t move;
+				uint32_t move = 0;
                 Move::setColor(move, color);
                 Move::setPosition(move, from, to);
                 moves.push_back(move);
@@ -220,7 +220,7 @@ void MoveGen::genCastlingMoves(Board& board, vector<uint32_t>& moves, bool color
     uint64_t friendlyPieces = board.colorBoards[color];
     uint64_t enemyPieces = board.colorBoards[!color];
 
-    uint32_t move;
+    uint32_t move = 0;
     Move::setColor(move, color);
 
 	// queenside

@@ -4,7 +4,7 @@ Board::Board() {
     this->setStartingPos();
 }
 
-inline void Board::setCopyBoard(Board* board) {
+void Board::setCopyBoard(Board* board) {
     for (int i = 0; i < 12; ++i) {
         pieceBoards[i] = board->pieceBoards[i];
     }
@@ -17,7 +17,7 @@ inline void Board::setCopyBoard(Board* board) {
     turn = board->turn;
 }
 
-inline void Board::setStartingPos() {
+void Board::setStartingPos() {
 
     // Initialize pieceBoards to the standard starting position
     pieceBoards[PAWN + WHITE]   = 0x000000000000FF00; 
@@ -45,7 +45,13 @@ inline void Board::setStartingPos() {
     turn = WHITE; // White starts
 }
 
-inline void Board::movePiece(uint32_t move) {
+void Board::setFenPos(string fen) {
+    // TODO: Implement FEN parsing logic
+}
+
+void Board::movePiece(uint32_t move) {
+    this->turn = !this->turn; // Switch turn
+
     bool color = Move::color(move);
     uint8_t from = Move::from(move);
     uint8_t to = Move::to(move);
@@ -83,4 +89,26 @@ inline void Board::movePiece(uint32_t move) {
         pieceBoards[Move::promotionPiece(move) + color] |= (1ULL << to); // Add promoted piece
         pieceBoards[PAWN + color] &= ~(1ULL << to); // Remove pawn
     }
+}
+
+void Board::print() {
+    cout << "+---+---+---+---+---+---+---+---+" << endl;
+    for (int row = 7; row >= 0; row--) {
+        cout << "|";
+        for (int col = 0; col < 8; col++) {
+            int square = TO_SQUARE(col + 'a', row + '1');
+            char piece = ' ';
+            for (int i = 0; i < 12; i++) {
+                if (pieceBoards[i] & (1ULL << square)) {
+                    piece = "PpNnBbRrQqKk"[i];
+                    break;
+                }
+            }
+            cout << " " << piece << " |";
+        }
+        cout << " " << row + 1 << endl;
+        cout << "+---+---+---+---+---+---+---+---+" << endl;
+    }
+    cout << "  a   b   c   d   e   f   g   h" << endl;
+    cout << "Turn: " << (turn ? "Black" : "White") << endl;
 }

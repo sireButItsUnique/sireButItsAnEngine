@@ -1,8 +1,8 @@
 #pragma once
 #include "includes.hpp"
 #include "helper.hpp"
-#include "Move.hpp"
 #include "Board.hpp"
+#include "Move.hpp"
 
 namespace MoveGen {
     /**
@@ -22,15 +22,6 @@ namespace MoveGen {
 	uint64_t bishopLookup[5248];
 	uint64_t knightLookup[64];
 	uint64_t kingLookup[64];
-
-    // @brief auto generates lookup tables for ray attacks
-    struct Initializer {
-		Initializer() {
-			init();  // calls your existing init function
-		}
-	};
-
-    static Initializer initializer;
     
     /**
      * @brief Initializes the ray attacks and lookup tables
@@ -54,4 +45,13 @@ namespace MoveGen {
     void genQueenMoves(Board& board, vector<uint32_t>& moves, bool color);
     void genKingMoves(Board& board, vector<uint32_t>& moves, bool color);
     void genCastlingMoves(Board& board, vector<uint32_t>& moves, bool color);
+
+    // @brief auto generates lookup tables for ray attacks
+    struct Initializer {
+		Initializer() {
+			MoveGen::init();  // calls your existing init function
+		}
+	};
+
+    static Initializer initializer;
 }
