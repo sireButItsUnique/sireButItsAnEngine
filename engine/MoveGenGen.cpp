@@ -17,11 +17,11 @@ void MoveGen::genMoves(Board& board, vector<uint32_t>& moves, bool color) {
 
 void MoveGen::genKnightMoves(Board& board, vector<uint32_t>& moves, bool color) {
 
-    uint64_t knight = board.pieceBoards[KNIGHT + color];
+    uint64_t knightBoard = board.pieceBoards[KNIGHT + color];
 	
-    while (knight) {
+    while (knightBoard) {
 		// get lookup
-		uint8_t from = _tzcnt_u64(knight);
+		uint8_t from = _tzcnt_u64(knightBoard);
 		uint64_t knight = knightLookup[from];
 		knight &= ~board.colorBoards[color];
 
@@ -34,7 +34,7 @@ void MoveGen::genKnightMoves(Board& board, vector<uint32_t>& moves, bool color) 
 			moves.push_back(move);
 			knight &= ~(1ULL << to);
 		}
-		knight &= ~(1ULL << from);
+		knightBoard &= ~(1ULL << from);
 	}
 }
 

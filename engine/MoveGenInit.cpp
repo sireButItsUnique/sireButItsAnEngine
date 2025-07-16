@@ -128,6 +128,9 @@ uint64_t noWeAttacks(uint64_t bishops, uint64_t blockers) {
 
 void MoveGen::init() {
     
+	// check time
+	auto start = chrono::high_resolution_clock::now();
+
     /***
     Initialize ray attacks for each square on the board.
     ***/
@@ -285,4 +288,10 @@ void MoveGen::init() {
 		kingPos |= (kingPos << 8) | (kingPos >> 8);
 		kingLookup[square] = kingPos & ~(1ULL << square);
 	}
+
+	// check time
+	auto end = chrono::high_resolution_clock::now();
+	double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
+	time_taken *= 1e-9;
+	cout << "[Info] Initiated move generator in " << fixed << time_taken << setprecision(9) << " secs" << endl;
 }

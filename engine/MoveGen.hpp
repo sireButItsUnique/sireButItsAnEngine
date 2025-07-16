@@ -47,11 +47,11 @@ namespace MoveGen {
     void genCastlingMoves(Board& board, vector<uint32_t>& moves, bool color);
 
     // @brief auto generates lookup tables for ray attacks
-    struct Initializer {
-		Initializer() {
-			MoveGen::init();  // calls your existing init function
-		}
-	};
+    // struct Initializer {
+	// 	Initializer() {
+	// 		MoveGen::init();  // calls your existing init function
+	// 	}
+	// };
 
-    static Initializer initializer;
+    // static Initializer initializer;
 }

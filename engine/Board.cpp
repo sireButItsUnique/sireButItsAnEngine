@@ -74,8 +74,11 @@ void Board::movePiece(uint32_t move) {
 
     // Normal move
     for (int i = 0; i < 12; i += 2) {
-        pieceBoards[i + color] &= ~(1ULL << from); // Remove piece from old square
-        pieceBoards[i + color] |= (1ULL << to); // Place piece on new square
+        if (pieceBoards[i + color] & (1ULL << from)) {
+            pieceBoards[i + color] &= ~(1ULL << from); // Remove piece from old square
+            pieceBoards[i + color] |= (1ULL << to); // Place piece on new square
+            break;
+        }
     }
     for (int i = 0; i < 12; i += 2) {
         pieceBoards[i + !color] &= ~(1ULL << to); // Remove enemy piece on new square

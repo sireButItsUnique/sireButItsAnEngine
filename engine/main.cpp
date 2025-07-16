@@ -9,6 +9,7 @@
 string cmd;
 Board board;
 int main() {
+    MoveGen::init(); // Initialize ray attacks and lookup tables
     while (cin >> cmd) {
         if (cmd == "quit") return 0;
         
@@ -55,13 +56,41 @@ int main() {
             SPLIT_STRING(cmd, tokens);
 
             if (tokens[1] == "depth") {
-                // search to a specific depth
-            }
+                int depth = stoi(tokens[2]);
+                vector<vector<uint32_t>> moveHistory(64, vector<uint32_t>(64));
+                Search::count = 0;
+                auto start = chrono::high_resolution_clock::now();
+                
+                Search::bestMoves(board, depth, -50000, 50000, moveHistory);
 
+                auto end = chrono::high_resolution_clock::now();
+                double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
+                time_taken *= 1e-9;
+                uint32_t move = moveHistory[depth][0];
+                for (int i = 0; i <= depth; ++i) {
+                    cout << "[Info] Depth " << i << ": ";
+                    for (int j = 0; j < 64; ++j) {
+                        if (moveHistory[i][j] != 0) {
+                            cout << Move::toAlgebra(moveHistory[i][j]) << " ";
+                        }
+                    }
+                    cout << endl;
+                }
+
+                cout << "[Info] Evaluated " << Search::count << " positions in " << fixed << time_taken << setprecision(9) << " secs" << endl;
+                cout << "bestmove " << Move::toAlgebra(move) << endl;
+            }
         }
 
         else if (cmd == "d") {
             board.print();
+            vector<uint32_t> moves;
+            MoveGen::genMoves(board, moves, board.turn);
+            cout << "Moves: ";
+            for (uint32_t move : moves) {
+                cout << Move::toAlgebra(move) << " ";
+            }
+            cout << endl;
         }
     }
 }
