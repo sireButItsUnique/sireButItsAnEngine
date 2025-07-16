@@ -9,9 +9,9 @@ void SPLIT_STRING(string s, vector<string>& tokens) {
 }
 
 int TO_SQUARE(int col, int row) {
-   return 8 * (row - '1') + 7 - (col - 'a');
+    return 8 * (row - '1') + (col - 'a');
 }
 
 string TO_ALGEBRA(int square) {
-    return string(1, 'a' + (7 - (square % 8))) + string(1, '1' + (square / 8));
+    return string(1, 'a' + (square % 8)) + string(1, '1' + (square / 8));
 }

@@ -1,6 +1,14 @@
+#include <algorithm>
+#include <chrono>
+#include <intrin.h>
+#include <iomanip>
 #include <iostream>
-#include <string>
-#include <vector>
+#include <locale.h>
 #include <sstream>
-#include <cstdint>
+#include <stdint.h>
+#include <stdio.h>
+#include <string>
+#include <time.h>
+#include <utility>
+#include <vector>
 using namespace std;

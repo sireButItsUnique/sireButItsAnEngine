@@ -1,0 +1,86 @@
+#include "Board.hpp"
+
+Board::Board() {
+    this->setStartingPos();
+}
+
+inline void Board::setCopyBoard(Board* board) {
+    for (int i = 0; i < 12; ++i) {
+        pieceBoards[i] = board->pieceBoards[i];
+    }
+    colorBoards[WHITE] = board->colorBoards[WHITE];
+    colorBoards[BLACK] = board->colorBoards[BLACK];
+    whiteQueenCastle = board->whiteQueenCastle;
+    whiteKingCastle = board->whiteKingCastle;
+    blackQueenCastle = board->blackQueenCastle;
+    blackKingCastle = board->blackKingCastle;
+    turn = board->turn;
+}
+
+inline void Board::setStartingPos() {
+
+    // Initialize pieceBoards to the standard starting position
+    pieceBoards[PAWN + WHITE]   = 0x000000000000FF00; 
+    pieceBoards[PAWN + BLACK]   = 0x00FF000000000000; 
+    pieceBoards[KNIGHT + WHITE] = 0x0000000000000042;
+    pieceBoards[KNIGHT + BLACK] = 0x4200000000000000;
+    pieceBoards[BISHOP + WHITE] = 0x0000000000000024;
+    pieceBoards[BISHOP + BLACK] = 0x2400000000000000;
+    pieceBoards[ROOK + WHITE]   = 0x0000000000000081;
+    pieceBoards[ROOK + BLACK]   = 0x8100000000000000;
+    pieceBoards[QUEEN + WHITE]  = 0x0000000000000008;
+    pieceBoards[QUEEN + BLACK]  = 0x0800000000000000;
+    pieceBoards[KING + WHITE]   = 0x0000000000000010;
+    pieceBoards[KING + BLACK]   = 0x1000000000000000;
+
+    // Set color boards
+    colorBoards[WHITE] = 0x000000000000FFFF;
+    colorBoards[BLACK] = 0xFFFF000000000000; // Black pieces
+
+    whiteQueenCastle = true;
+    whiteKingCastle = true;
+    blackQueenCastle = true;
+    blackKingCastle = true;
+
+    turn = WHITE; // White starts
+}
+
+inline void Board::movePiece(uint32_t move) {
+    bool color = Move::color(move);
+    uint8_t from = Move::from(move);
+    uint8_t to = Move::to(move);
+
+    // Handle castling
+    if (Move::isCastle(move)) {
+        if (Move::castleSide(move) == QUEENSIDE) {
+            pieceBoards[ROOK + color] ^= 0x9 << (color * 56); // Move rook from a-file
+            pieceBoards[KING + color] ^= 0x14 << (color * 56); // Move king
+            colorBoards[color] ^= 0x9 << (color * 56);
+            colorBoards[color] ^= 0x14 << (color * 56);
+        } else { // Kingside
+            pieceBoards[ROOK + color] ^= 0xa0 << (color * 56); // Move rook from h-file
+            pieceBoards[KING + color] ^= 0x50 << (color * 56); // Move king
+            colorBoards[color] ^= 0xa0 << (color * 56);
+            colorBoards[color] ^= 0x50 << (color * 56);
+        }
+        return;
+    }
+
+    // Normal move
+    for (int i = 0; i < 12; i += 2) {
+        pieceBoards[i + color] &= ~(1ULL << from); // Remove piece from old square
+        pieceBoards[i + color] |= (1ULL << to); // Place piece on new square
+    }
+    for (int i = 0; i < 12; i += 2) {
+        pieceBoards[i + !color] &= ~(1ULL << to); // Remove enemy piece on new square
+    }
+    colorBoards[color] &= ~(1ULL << from); // Remove piece from old square
+    colorBoards[color] |= (1ULL << to); // Place piece on new square
+    colorBoards[!color] &= ~(1ULL << to); // Remove enemy piece on new square
+    
+    // Handle promotion
+    if (Move::isPromotion(move)) {
+        pieceBoards[Move::promotionPiece(move) + color] |= (1ULL << to); // Add promoted piece
+        pieceBoards[PAWN + color] &= ~(1ULL << to); // Remove pawn
+    }
+}

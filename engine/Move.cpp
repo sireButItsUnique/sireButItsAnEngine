@@ -13,6 +13,7 @@ inline void Move::setPosition(uint32_t& data, uint8_t from, uint8_t to) {
 
 inline void Move::setPromotion(uint32_t& data, uint8_t piece) {
 	data |= 0x40000000; // set the promotion bit
+	data &= ~0x30000000; // clear the previous promotion bits
 	data |= (((piece >> 1) - 1) << 28); // set the piece code for promotion
 }
 

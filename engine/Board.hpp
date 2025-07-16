@@ -16,45 +16,30 @@ public:
 	Board();
 
 	/**
+	 * @brief sets the copy of the board to the current position
+	 *
+	 * @param board pointer to the board to copy
+	 */
+	inline void setCopyBoard(Board* board);
+
+	/**
 	 * @brief sets bitboards to standard starting pos
 	 *
 	 * @param moveGen helper class used to generate pseudo legal moves
 	 */
-	void setStartingPos();
+	inline void setStartingPos();
 
 	/**
-	 * @brief move piece given wtv lichess gives -> have to make modifications
+	 * @brief sets bitboards to pos given by FEN string
 	 *
-	 * @param move move in string
+	 * @param fen string representing the position in FEN format
 	 */
-	void movePiece(string);
-	/**
-	 * @brief move piece in standard piece bitboards
-	 *
-	 * @param move pointer to move object
-	 */
-	void movePiece(Move *);
+	inline void setFenPos(string fen);
 
 	/**
 	 * @brief move piece in standard piece bitboards
 	 *
-	 * @param from int representing the square piece is on
-	 * @param to int representing the square piece will move to
+	 * @param move move to make
 	 */
-	void movePiece(int, int);
-
-	/**
-	 * @brief
-	 *
-	 * @param color bool representing the color to generate attack board for, white = false; black = true
-	 * @param moveGen helper class used to generate pseudo legal moves (and in this case attacks)
-	 */
-	void genAttackBoard(bool);
-
-	/**
-	 * @brief generates all possible moves for the current board
-	 *
-	 * @param debug whether or not to print time msgs
-	 */
-	void genMoves(bool = false);
+	inline void movePiece(uint32_t move);
 };
