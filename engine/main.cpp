@@ -57,7 +57,7 @@ int main() {
 
             if (tokens[1] == "depth") {
                 int depth = stoi(tokens[2]);
-                vector<vector<uint32_t>> moveHistory(64, vector<uint32_t>(64));
+                vector<vector<uint32_t>> moveHistory(64, vector<uint32_t>(64, 0));
                 Search::count = 0;
                 auto start = chrono::high_resolution_clock::now();
                 
