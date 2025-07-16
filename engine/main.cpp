@@ -61,7 +61,7 @@ int main() {
                 Search::count = 0;
                 auto start = chrono::high_resolution_clock::now();
                 
-                Search::bestMoves(board, depth, -50000, 50000, moveHistory);
+                int32_t eval = Search::bestMoves(board, depth, -50000, 50000, moveHistory);
 
                 auto end = chrono::high_resolution_clock::now();
                 double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
@@ -78,6 +78,7 @@ int main() {
                 }
 
                 cout << "[Info] Evaluated " << Search::count << " positions in " << fixed << time_taken << setprecision(9) << " secs" << endl;
+                cout << "[Info] Eval: " << eval << endl;
                 cout << "bestmove " << Move::toAlgebra(move) << endl;
             }
         }
