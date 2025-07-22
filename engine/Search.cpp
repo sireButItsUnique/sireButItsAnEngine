@@ -43,6 +43,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta) {
         
         Board newBoard = board; // Create a copy of the board
         newBoard.movePiece(move); // Make the move
+        if (newBoard.pieceBoards[KING + newBoard.turn] == 0) return 50000; // Check for checkmate
 
         // Evaluate the new position
         int32_t score = -Search::finishCaptures(newBoard, -beta, -alpha); // Negate for minimax
@@ -67,6 +68,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     for (uint32_t move : moves) {
         Board newBoard = board; // Create a copy of the board
         newBoard.movePiece(move); // Make the move
+        if (newBoard.pieceBoards[KING + newBoard.turn] == 0) return 50000; // Check for checkmate
 
         // Evaluate the new position
         int32_t score; // Negative because score is from opponent's perspective

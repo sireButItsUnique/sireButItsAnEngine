@@ -220,20 +220,21 @@ void MoveGen::genCastlingMoves(Board& board, vector<uint32_t>& moves, bool color
     uint64_t friendlyPieces = board.colorBoards[color];
     uint64_t enemyPieces = board.colorBoards[!color];
 
-    uint32_t move = 0;
-    Move::setColor(move, color);
-
 	// queenside
 	if (canCastleQueen) {
 		if (color) { // black
 			if (!((friendlyPieces | enemyPieces) & 0xe00000000000000ULL)) {
 				// no pieces blocking
+				uint32_t move = 0;
+    			Move::setColor(move, color);
                 Move::setCastle(move, QUEENSIDE);
                 moves.push_back(move);
 			}
 		} else { // white
 			if (!((friendlyPieces | enemyPieces) & 0xeULL)) {
 				// no pieces blocking
+				uint32_t move = 0;
+    			Move::setColor(move, color);
                 Move::setCastle(move, QUEENSIDE);
                 moves.push_back(move);
 			}
@@ -245,12 +246,16 @@ void MoveGen::genCastlingMoves(Board& board, vector<uint32_t>& moves, bool color
 		if (color) { // black
 			if (!((friendlyPieces | enemyPieces) & 0x6000000000000000ULL)) {
 				// no pieces blocking
+				uint32_t move = 0;
+    			Move::setColor(move, color);
                 Move::setCastle(move, KINGSIDE);
                 moves.push_back(move);
 			}
 		} else { // white
 			if (!((friendlyPieces | enemyPieces) & 0x60ULL)) {
 				// no pieces blocking
+				uint32_t move = 0;
+    			Move::setColor(move, color);
                 Move::setCastle(move, KINGSIDE);
                 moves.push_back(move);
 			}
