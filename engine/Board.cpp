@@ -59,15 +59,15 @@ void Board::movePiece(uint32_t move) {
     // Handle castling
     if (Move::isCastle(move)) {
         if (Move::castleSide(move) == QUEENSIDE) {
-            pieceBoards[ROOK + color] ^= 0x9 << (color * 56); // Move rook from a-file
-            pieceBoards[KING + color] ^= 0x14 << (color * 56); // Move king
-            colorBoards[color] ^= 0x9 << (color * 56);
-            colorBoards[color] ^= 0x14 << (color * 56);
+            pieceBoards[ROOK + color] ^= (0x9ULL << (color * 56)); // Move rook from a-file
+            pieceBoards[KING + color] ^= (0x14ULL << (color * 56)); // Move king
+            colorBoards[color] ^= (0x9ULL << (color * 56));
+            colorBoards[color] ^= (0x14ULL << (color * 56));
         } else { // Kingside
-            pieceBoards[ROOK + color] ^= 0xa0 << (color * 56); // Move rook from h-file
-            pieceBoards[KING + color] ^= 0x50 << (color * 56); // Move king
-            colorBoards[color] ^= 0xa0 << (color * 56);
-            colorBoards[color] ^= 0x50 << (color * 56);
+            pieceBoards[ROOK + color] ^= (0xa0ULL << (color * 56)); // Move rook from h-file
+            pieceBoards[KING + color] ^= (0x50ULL << (color * 56)); // Move king
+            colorBoards[color] ^= (0xa0ULL << (color * 56));
+            colorBoards[color] ^= (0x50ULL << (color * 56));
         }
         return;
     }
@@ -89,7 +89,7 @@ void Board::movePiece(uint32_t move) {
     
     // Handle promotion
     if (Move::isPromotion(move)) {
-        pieceBoards[Move::promotionPiece(move) + color] |= (1ULL << to); // Add promoted piece
+        pieceBoards[Move::promotionPiece(move)] |= (1ULL << to); // Add promoted piece
         pieceBoards[PAWN + color] &= ~(1ULL << to); // Remove pawn
     }
 }

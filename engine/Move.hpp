@@ -96,7 +96,7 @@ namespace Move {
 	 * @brief returns which piece the pawn promoted to during the move
 	 */
 	inline uint8_t promotionPiece(uint32_t& data) {
-		return ((((data & 0x30000000) >> 28) + 1) << 1 + color(data));
+		return (((((data & 0x30000000) >> 28) + 1) << 1) + color(data));
 	}
 
 	/**

@@ -4,8 +4,7 @@ project(sireButItsAnEngine)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_compile_options(-mbmi -mbmi2 -fsanitize=address)
-add_link_options(-fsanitize=address)
+add_compile_options(-mbmi -mbmi2)
 
 file(GLOB SRCS engine/*.cpp)
 add_executable(Engine ${SRCS})

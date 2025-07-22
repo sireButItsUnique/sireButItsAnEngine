@@ -77,7 +77,7 @@ int main() {
                     cout << endl;
                 }
 
-                cout << "[Info] Evaluated " << Search::count << " positions in " << fixed << time_taken << setprecision(9) << " secs" << endl;
+                cout << "[Info] Evaluated " << Search::count << " positions in " << fixed << time_taken << setprecision(4) << " secs (" << (Search::count / time_taken) << " pos/s)" << endl;
                 cout << "[Info] Eval: " << eval << endl;
                 cout << "bestmove " << Move::toAlgebra(move) << endl;
             }
