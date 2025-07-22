@@ -1,4 +1,3 @@
-#pragma once
 #include "includes.hpp"
 #include "helper.hpp"
 #include "Board.hpp"

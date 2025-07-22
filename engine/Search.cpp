@@ -26,7 +26,7 @@ int32_t evalBoard(Board& board) {
     return score;
 }
 
-int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta) {
+int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int depth) {
     Search::count++; // Increment move count for debugging
     
     vector<uint32_t> moves;
@@ -38,7 +38,13 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta) {
     if (staticEval > alpha) alpha = staticEval;
     eval = staticEval; // Start with static evaluation since we are not forced to play a capture
 
+    if (depth > 32) {
+        board.print(); // Print the board for debugging
+        cout << "Rec #" << depth << endl;
+    }
+    
     for (uint32_t move : moves) {
+        if (Move::isCastle(move)) continue; // Skip castling moves for captures
         if (!((1ULL << Move::to(move)) & board.colorBoards[!board.turn])) continue; // Skip moves that don't capture
         
         Board newBoard = board; // Create a copy of the board
@@ -46,7 +52,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta) {
         if (newBoard.pieceBoards[KING + newBoard.turn] == 0) return 50000; // Check for checkmate
 
         // Evaluate the new position
-        int32_t score = -Search::finishCaptures(newBoard, -beta, -alpha); // Negate for minimax
+        int32_t score = -Search::finishCaptures(newBoard, -beta, -alpha, depth + 1); // Negate for minimax
 
         // Prune if move is too good -> opp has a better move last ply
         if (score >= beta) return beta;
@@ -73,7 +79,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         // Evaluate the new position
         int32_t score; // Negative because score is from opponent's perspective
         if (depth > 0) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV); // Negate for minimax
-        else score = -Search::finishCaptures(newBoard, -beta, -alpha); // Leaf node evaluation
+        else score = -Search::finishCaptures(newBoard, -beta, -alpha, 1); // Leaf node evaluation
 
         // Prune if move is too good -> opp has a better move last ply
         if (score >= beta) return beta;

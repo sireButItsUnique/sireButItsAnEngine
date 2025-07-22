@@ -69,7 +69,28 @@ void Board::movePiece(uint32_t move) {
             colorBoards[color] ^= (0xa0ULL << (color * 56));
             colorBoards[color] ^= (0x50ULL << (color * 56));
         }
+        if (color) {
+            blackQueenCastle = false;
+            blackKingCastle = false;
+        } else {
+            whiteQueenCastle = false;
+            whiteKingCastle = false;
+        }
         return;
+    }
+
+    // Castling Shenanigans
+    if (from == 0 || to == 0) whiteQueenCastle = false;
+    if (from == 7 || to == 7) whiteKingCastle = false;
+    if (from == 56 || to == 56) blackQueenCastle = false;
+    if (from == 63 || to == 63) blackKingCastle = false;
+    if (from == 4) {
+        whiteKingCastle = false;
+        whiteQueenCastle = false;
+    }
+    if (from == 60) {
+        blackKingCastle = false;
+        blackQueenCastle = false;
     }
 
     // Normal move
