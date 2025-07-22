@@ -1,1 +1,4 @@
-build/
+bongcloud
+*.o
+.vscode
+*.out
