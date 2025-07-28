@@ -30,7 +30,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
     vector<uint32_t> moves;
     MoveGen::genMoves(board, moves, board.turn);
 
-    int32_t eval = INFINITE_SCORE; // Initialize to a very low value
+    int32_t eval = -INFINITE_SCORE; // Initialize to a very low value
     int32_t staticEval = evalBoard(board);
     if (staticEval >= beta) return beta;
     if (staticEval > alpha) alpha = staticEval;
@@ -64,7 +64,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     vector<uint32_t> moves;
     MoveGen::genMoves(board, moves, board.turn);
 
-    int32_t eval = INFINITE_SCORE; // Initialize to a very low value
+    int32_t eval = -INFINITE_SCORE; // Initialize to a very low value
 
     for (uint32_t move : moves) {
         Board newBoard = board; // Create a copy of the board
