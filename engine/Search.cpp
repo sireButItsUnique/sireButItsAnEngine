@@ -30,7 +30,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
     vector<uint32_t> moves;
     MoveGen::genMoves(board, moves, board.turn);
 
-    int32_t eval = -50000; // Initialize to a very low value
+    int32_t eval = MATE_SCORE * -2; // Initialize to a very low value
     int32_t staticEval = evalBoard(board);
     if (staticEval >= beta) return beta;
     if (staticEval > alpha) alpha = staticEval;
@@ -43,7 +43,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
         Board newBoard = board; // Create a copy of the board
         newBoard.movePiece(move); // Make the move
 
-        if (newBoard.pieceBoards[KING + newBoard.turn] == 0) return 50000; // Check for checkmate
+        if (newBoard.pieceBoards[KING + newBoard.turn] == 0) return MATE_SCORE; // Check for checkmate
 
         // Evaluate the new position
         int32_t score = -Search::finishCaptures(newBoard, -beta, -alpha, depth + 1); // Negate for minimax
@@ -64,12 +64,12 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     vector<uint32_t> moves;
     MoveGen::genMoves(board, moves, board.turn);
 
-    int32_t eval = -50000; // Initialize to a very low value
+    int32_t eval = MATE_SCORE * -2; // Initialize to a very low value
 
     for (uint32_t move : moves) {
         Board newBoard = board; // Create a copy of the board
         newBoard.movePiece(move); // Make the move
-        if (newBoard.pieceBoards[KING + newBoard.turn] == 0) return 50000; // Check for checkmate
+        if (newBoard.pieceBoards[KING + newBoard.turn] == 0) return MATE_SCORE; // Check for checkmate
 
         // Evaluate the new position
         int32_t score; // Negative because score is from opponent's perspective
