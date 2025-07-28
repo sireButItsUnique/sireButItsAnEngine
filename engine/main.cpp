@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
         Search::count = 0;
         auto start = chrono::high_resolution_clock::now();
         
-        Search::bestMoves(board, 5, -50000, 50000, moveHistory);
+        Search::bestMoves(board, 5, -INFINITE_SCORE, INFINITE_SCORE, moveHistory);
 
         // outputing the results
         auto end = chrono::high_resolution_clock::now();
@@ -109,8 +109,8 @@ int main(int argc, char *argv[]) {
             auto start = chrono::high_resolution_clock::now();
             
             int32_t eval;
-            if (timeLimit < 60 * 1000) eval = Search::bestMoves(board, 2, -50000, 50000, moveHistory);
-            else eval = Search::bestMoves(board, 3, -50000, 50000, moveHistory);
+            if (timeLimit < 60 * 1000) eval = Search::bestMoves(board, 2, -INFINITE_SCORE, INFINITE_SCORE, moveHistory);
+            else eval = Search::bestMoves(board, 3, -INFINITE_SCORE, INFINITE_SCORE, moveHistory);
 
             // outputing the results
             auto end = chrono::high_resolution_clock::now();

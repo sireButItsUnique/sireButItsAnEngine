@@ -27,4 +27,5 @@ string TO_ALGEBRA(int);
 #define WEST 6
 #define NORTHWEST 7
 
-#define MATE_SCORE 900000
+#define MATE_SCORE 400000
+#define INFINITE_SCORE 900000
