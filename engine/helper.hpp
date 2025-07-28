@@ -26,3 +26,5 @@ string TO_ALGEBRA(int);
 #define SOUTHWEST 5
 #define WEST 6
 #define NORTHWEST 7
+
+#define MATE_SCORE 900000

@@ -20,8 +20,6 @@ int32_t evalBoard(Board& board) {
     score -= __popcnt64(board.pieceBoards[ROOK + !board.turn]) * 500;
     score += __popcnt64(board.pieceBoards[QUEEN + board.turn]) * 900; // Queens
     score -= __popcnt64(board.pieceBoards[QUEEN + !board.turn]) * 900;
-    score += __popcnt64(board.pieceBoards[KING + board.turn]) * 20000; // Kings
-    score -= __popcnt64(board.pieceBoards[KING + !board.turn]) * 20000;
 
     return score;
 }
@@ -56,6 +54,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
         alpha = max(alpha, eval);
     }
 
+    if (abs(eval) > MATE_SCORE - 100) return eval - 1;
     return eval;
 }
 
@@ -93,5 +92,6 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     }
 
     if (moves.empty()) return evalBoard(board);
+    if (abs(eval) > MATE_SCORE - 100) return eval - 1;
     return eval;
 }

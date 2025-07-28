@@ -7,14 +7,35 @@
 
 string cmd;
 Board board;
-int main() {
+int main(int argc, char *argv[]) {
     MoveGen::init(); // Initialize ray attacks and lookup tables
+
+    // Run benchmark
+    if (argc == 2 && std::string(argv[1]) == "bench") {
+        board.setStartingPos();
+        vector<vector<uint32_t>> moveHistory(64, vector<uint32_t>(64, 0));
+        Search::count = 0;
+        auto start = chrono::high_resolution_clock::now();
+        
+        Search::bestMoves(board, 5, -50000, 50000, moveHistory);
+
+        // outputing the results
+        auto end = chrono::high_resolution_clock::now();
+        double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
+        time_taken *= 1e-9;
+        cout << Search::count << " nodes " << fixed << setprecision(2) << (Search::count / time_taken) << " nps" << std::endl;
+        return 0;
+    }
+
+    // UCI loop
     while (cin >> cmd) {
         if (cmd == "quit") return 0;
         
         else if (cmd == "uci") {
             cout << "id name sireButItsAnEngine" << endl;
-            cout << "id author Robert Lu" << endl;
+            cout << "id author sireButItsUnique" << endl;
+            cout << "option name Hash type spin default 1 min 1 max 1" << endl;
+            cout << "option name Threads type spin default 1 min 1 max 1" << endl;
             cout << "uciok" << endl;
         } 
         
@@ -61,12 +82,14 @@ int main() {
         } 
         
         else if (cmd == "go") {
+
+            // sorting out the command line arguments
             getline(cin, cmd);
             vector<string> tokens;
             SPLIT_STRING(cmd, tokens);
 
-            int depth = 5;
-            int wtime = INT32_MAX, btime = INT32_MAX;
+            int depth = 3;
+            int64_t wtime = 60 * 1000, btime = 60 * 1000; 
 
             for (int i = 1; i < tokens.size(); ++i) {
                 if (tokens[i] == "depth") {
@@ -78,12 +101,18 @@ int main() {
                 }
             }
 
+            int64_t timeLimit = (board.turn == WHITE) ? wtime : btime;
+
+            // initiating search
             vector<vector<uint32_t>> moveHistory(64, vector<uint32_t>(64, 0));
             Search::count = 0;
             auto start = chrono::high_resolution_clock::now();
             
-            int32_t eval = Search::bestMoves(board, depth, -50000, 50000, moveHistory);
+            int32_t eval;
+            if (timeLimit < 60 * 1000) eval = Search::bestMoves(board, 2, -50000, 50000, moveHistory);
+            else eval = Search::bestMoves(board, 3, -50000, 50000, moveHistory);
 
+            // outputing the results
             auto end = chrono::high_resolution_clock::now();
             double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
             time_taken *= 1e-9;
