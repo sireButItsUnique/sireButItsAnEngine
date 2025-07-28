@@ -2,3 +2,4 @@ bongcloud
 *.o
 .vscode
 *.out
+/build

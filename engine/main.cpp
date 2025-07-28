@@ -54,32 +54,42 @@ int main() {
             vector<string> tokens;
             SPLIT_STRING(cmd, tokens);
 
-            if (tokens[1] == "depth") {
-                int depth = stoi(tokens[2]);
-                vector<vector<uint32_t>> moveHistory(64, vector<uint32_t>(64, 0));
-                Search::count = 0;
-                auto start = chrono::high_resolution_clock::now();
-                
-                int32_t eval = Search::bestMoves(board, depth, -50000, 50000, moveHistory);
+            int depth = 0;
+            int wtime = INT32_MAX, btime = INT32_MAX;
 
-                auto end = chrono::high_resolution_clock::now();
-                double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
-                time_taken *= 1e-9;
-                uint32_t move = moveHistory[depth][0];
-                for (int i = 0; i <= depth; ++i) {
-                    cout << "[Info] Depth " << i << ": ";
-                    for (int j = 0; j < 64; ++j) {
-                        if (moveHistory[i][j] != 0) {
-                            cout << Move::toAlgebra(moveHistory[i][j]) << " ";
-                        }
-                    }
-                    cout << endl;
+            for (int i = 1; i < tokens.size(); ++i) {
+                if (tokens[i] == "depth") {
+                    depth = stoi(tokens[i + 1]);
+                } else if (tokens[i] == "wtime") {
+                    wtime = stoi(tokens[i + 1]);
+                } else if (tokens[i] == "btime") {
+                    btime = stoi(tokens[i + 1]);
                 }
-
-                cout << "[Info] Evaluated " << Search::count << " positions in " << fixed << time_taken << setprecision(4) << " secs (" << (Search::count / time_taken) << " pos/s)" << endl;
-                cout << "[Info] Eval: " << eval << endl;
-                cout << "bestmove " << Move::toAlgebra(move) << endl;
             }
+
+            vector<vector<uint32_t>> moveHistory(64, vector<uint32_t>(64, 0));
+            Search::count = 0;
+            auto start = chrono::high_resolution_clock::now();
+            
+            int32_t eval = Search::bestMoves(board, depth, -50000, 50000, moveHistory);
+
+            auto end = chrono::high_resolution_clock::now();
+            double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
+            time_taken *= 1e-9;
+            uint32_t move = moveHistory[depth][0];
+            for (int i = 0; i <= depth; ++i) {
+                cout << "info Depth " << i << ": ";
+                for (int j = 0; j < 64; ++j) {
+                    if (moveHistory[i][j] != 0) {
+                        cout << Move::toAlgebra(moveHistory[i][j]) << " ";
+                    }
+                }
+                cout << endl;
+            }
+
+            cout << "info Evaluated " << Search::count << " positions in " << fixed << time_taken << setprecision(4) << " secs (" << (Search::count / time_taken) << " pos/s)" << endl;
+            cout << "info Eval: " << eval << endl;
+            cout << "bestmove " << Move::toAlgebra(move) << endl;
         }
 
         else if (cmd == "d") {

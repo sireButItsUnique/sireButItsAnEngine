@@ -293,5 +293,5 @@ void MoveGen::init() {
 	auto end = chrono::high_resolution_clock::now();
 	double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
 	time_taken *= 1e-9;
-	cout << "[Info] Initiated move generator in " << fixed << time_taken << setprecision(9) << " secs" << endl;
+	cout << "info Initiated move generator in " << fixed << time_taken << setprecision(9) << " secs" << endl;
 }

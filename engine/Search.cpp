@@ -37,11 +37,6 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
     if (staticEval >= beta) return beta;
     if (staticEval > alpha) alpha = staticEval;
     eval = staticEval; // Start with static evaluation since we are not forced to play a capture
-
-    if (depth > 32) {
-        board.print(); // Print the board for debugging
-        cout << "Rec #" << depth << endl;
-    }
     
     for (uint32_t move : moves) {
         if (Move::isCastle(move)) continue; // Skip castling moves for captures
