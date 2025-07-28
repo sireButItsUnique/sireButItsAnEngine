@@ -76,6 +76,7 @@ void Board::movePiece(uint32_t move) {
             whiteQueenCastle = false;
             whiteKingCastle = false;
         }
+        // this->print();
         return;
     }
 

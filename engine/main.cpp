@@ -32,10 +32,21 @@ int main() {
 
                 for (int i = 3; i < tokens.size(); ++i) {
                     uint32_t move = 0;
-                    int from = TO_SQUARE(tokens[i][0], tokens[i][1]);
-                    int to = TO_SQUARE(tokens[i][2], tokens[i][3]);
                     Move::setColor(move, board.turn);
-                    Move::setPosition(move, from, to);
+
+                    if (tokens[i] == "e1g1" && board.whiteKingCastle) {
+                        Move::setCastle(move, true);
+                    } else if (tokens[i] == "e1c1" && board.whiteQueenCastle) {
+                        Move::setCastle(move, false);
+                    } else if (tokens[i] == "e8g8" && board.blackKingCastle) {
+                        Move::setCastle(move, true);
+                    } else if (tokens[i] == "e8c8" && board.blackQueenCastle) {
+                        Move::setCastle(move, false);
+                    } else {
+                        int from = TO_SQUARE(tokens[i][0], tokens[i][1]);
+                        int to = TO_SQUARE(tokens[i][2], tokens[i][3]);
+                        Move::setPosition(move, from, to);
+                    }
 
                     board.movePiece(move);
                 }
@@ -54,7 +65,7 @@ int main() {
             vector<string> tokens;
             SPLIT_STRING(cmd, tokens);
 
-            int depth = 0;
+            int depth = 5;
             int wtime = INT32_MAX, btime = INT32_MAX;
 
             for (int i = 1; i < tokens.size(); ++i) {
@@ -78,7 +89,7 @@ int main() {
             time_taken *= 1e-9;
             uint32_t move = moveHistory[depth][0];
             for (int i = 0; i <= depth; ++i) {
-                cout << "info Depth " << i << ": ";
+                cout << "info string Depth " << i << ": ";
                 for (int j = 0; j < 64; ++j) {
                     if (moveHistory[i][j] != 0) {
                         cout << Move::toAlgebra(moveHistory[i][j]) << " ";
@@ -87,8 +98,8 @@ int main() {
                 cout << endl;
             }
 
-            cout << "info Evaluated " << Search::count << " positions in " << fixed << time_taken << setprecision(4) << " secs (" << (Search::count / time_taken) << " pos/s)" << endl;
-            cout << "info Eval: " << eval << endl;
+            cout << "info string Evaluated " << Search::count << " positions in " << fixed << time_taken << setprecision(4) << " secs (" << (Search::count / time_taken) << " pos/s)" << endl;
+            cout << "info string Eval: " << eval << endl;
             cout << "bestmove " << Move::toAlgebra(move) << endl;
         }
 

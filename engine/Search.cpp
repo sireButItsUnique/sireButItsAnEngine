@@ -44,6 +44,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
         
         Board newBoard = board; // Create a copy of the board
         newBoard.movePiece(move); // Make the move
+
         if (newBoard.pieceBoards[KING + newBoard.turn] == 0) return 50000; // Check for checkmate
 
         // Evaluate the new position

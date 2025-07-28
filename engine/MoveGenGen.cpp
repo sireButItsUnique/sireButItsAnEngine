@@ -159,18 +159,19 @@ void MoveGen::genPawnMoves(Board& board, vector<uint32_t>& moves, bool color) { 
 		uint8_t from = _tzcnt_u64(pawnBoard);
 		uint64_t pawn = (1ULL << from);
 
+
 		// pushes
-		if (color) {
+		if (color == BLACK) {
 			pawn >>= 8;
 			pawn &= ~(friendlyPieces | enemyPieces);
-			if (pawn & 0xff0000000000) {
+			if (pawn & 0xff0000000000ULL) {
 				pawn |= (pawn >> 8);
 				pawn &= ~(friendlyPieces | enemyPieces);
 			}
 		} else {
 			pawn <<= 8;
 			pawn &= ~(friendlyPieces | enemyPieces);
-			if (pawn & 0xff0000) {
+			if (pawn & 0xff0000ULL) {
 				pawn |= (pawn << 8);
 				pawn &= ~(friendlyPieces | enemyPieces);
 			}
@@ -178,11 +179,11 @@ void MoveGen::genPawnMoves(Board& board, vector<uint32_t>& moves, bool color) { 
 
 		// captures
 		if (color) {
-			pawn |= (((1ULL << from) >> 9) & 0x7f7f7f7f7f7f7f7f & enemyPieces);
-			pawn |= (((1ULL << from) >> 7) & 0xfefefefefefefefe & enemyPieces);
+			pawn |= (((1ULL << from) >> 9) & 0x7f7f7f7f7f7f7f7fULL & enemyPieces);
+			pawn |= (((1ULL << from) >> 7) & 0xfefefefefefefefeULL & enemyPieces);
 		} else {
-			pawn |= (((1ULL << from) << 9) & 0xfefefefefefefefe & enemyPieces);
-			pawn |= (((1ULL << from) << 7) & 0x7f7f7f7f7f7f7f7f & enemyPieces);
+			pawn |= (((1ULL << from) << 9) & 0xfefefefefefefefeULL & enemyPieces);
+			pawn |= (((1ULL << from) << 7) & 0x7f7f7f7f7f7f7f7fULL & enemyPieces);
 		}
 
 		// iterate over end positions
