@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
             vector<string> tokens;
             SPLIT_STRING(cmd, tokens);
 
-            int depth = 3;
+            int depth = -1;
             int64_t wtime = 60 * 1000, btime = 60 * 1000; 
 
             for (int i = 1; i < tokens.size(); ++i) {
@@ -102,15 +102,17 @@ int main(int argc, char *argv[]) {
             }
 
             int64_t timeLimit = (board.turn == WHITE) ? wtime : btime;
+            if (depth == -1) {
+                if (timeLimit < 60 * 1000) depth = 2;
+                else depth = 3;
+            }
 
             // initiating search
             vector<vector<uint32_t>> moveHistory(64, vector<uint32_t>(64, 0));
             Search::count = 0;
             auto start = chrono::high_resolution_clock::now();
             
-            int32_t eval;
-            if (timeLimit < 60 * 1000) eval = Search::bestMoves(board, 2, -INFINITE_SCORE, INFINITE_SCORE, moveHistory);
-            else eval = Search::bestMoves(board, 3, -INFINITE_SCORE, INFINITE_SCORE, moveHistory);
+            int32_t eval = Search::bestMoves(board, depth, -INFINITE_SCORE, INFINITE_SCORE, moveHistory);
 
             // outputing the results
             auto end = chrono::high_resolution_clock::now();
