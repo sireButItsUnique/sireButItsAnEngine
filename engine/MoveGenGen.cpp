@@ -221,54 +221,71 @@ void MoveGen::genCastlingMoves(Board& board, vector<uint32_t>& moves, bool color
     uint64_t friendlyPieces = board.colorBoards[color];
     uint64_t enemyPieces = board.colorBoards[!color];
 
-	// queenside
+	// Queenside
 	if (canCastleQueen) {
-		if (color) { // black
+
+		// Black
+		if (color) { 
 			if (!((friendlyPieces | enemyPieces) & 0xe00000000000000ULL)) {
-				// no pieces blocking
-				uint32_t move = 0;
-    			Move::setColor(move, color);
-                Move::setCastle(move, QUEENSIDE);
-                moves.push_back(move);
+				if (!board.squareIsAttacked(color, 60) && !board.squareIsAttacked(color, 59) && !board.squareIsAttacked(color, 58)) {
+					// no pieces blocking and squares not attacked
+					uint32_t move = 0;
+					Move::setColor(move, color);
+					Move::setCastle(move, QUEENSIDE);
+					moves.push_back(move);
+				}
 			}
-		} else { // white
+		} 
+
+		// White
+		else {
 			if (!((friendlyPieces | enemyPieces) & 0xeULL)) {
-				// no pieces blocking
-				uint32_t move = 0;
-    			Move::setColor(move, color);
-                Move::setCastle(move, QUEENSIDE);
-                moves.push_back(move);
+				if (!board.squareIsAttacked(color, 4) && !board.squareIsAttacked(color, 3) && !board.squareIsAttacked(color, 2)) {
+					// no pieces blocking and squares not attacked
+					uint32_t move = 0;
+					Move::setColor(move, color);
+					Move::setCastle(move, QUEENSIDE);
+					moves.push_back(move);
+				}
 			}
 		}
 	}
 
-	// kingside
+	// Kingside
 	if (canCastleKing) {
-		if (color) { // black
+
+		// Black
+		if (color) {
 			if (!((friendlyPieces | enemyPieces) & 0x6000000000000000ULL)) {
-				// no pieces blocking
-				uint32_t move = 0;
-    			Move::setColor(move, color);
-                Move::setCastle(move, KINGSIDE);
-                moves.push_back(move);
+				if (!board.squareIsAttacked(color, 60) && !board.squareIsAttacked(color, 61) && !board.squareIsAttacked(color, 62)) {
+					// no pieces blocking and squares not attacked
+					uint32_t move = 0;
+					Move::setColor(move, color);
+					Move::setCastle(move, KINGSIDE);
+					moves.push_back(move);
+				}
 			}
-		} else { // white
+		} 
+		
+		// White
+		else {
 			if (!((friendlyPieces | enemyPieces) & 0x60ULL)) {
-				// no pieces blocking
-				uint32_t move = 0;
-    			Move::setColor(move, color);
-                Move::setCastle(move, KINGSIDE);
-                moves.push_back(move);
+				if (!board.squareIsAttacked(color, 4) && !board.squareIsAttacked(color, 5) && !board.squareIsAttacked(color, 6)) {
+					// no pieces blocking and squares not attacked
+					uint32_t move = 0;
+					Move::setColor(move, color);
+					Move::setCastle(move, KINGSIDE);
+					moves.push_back(move);
+				}
 			}
 		}
 	}
 }
 
-bool Board::kingIsAttacked(bool color) {
-    uint64_t kingBoard = pieceBoards[KING + color];
-    if (kingBoard == 0) return true; // King is missing, attacked
-
-    uint64_t friendlyPieces = this->colorBoards[color];
+bool Board::squareIsAttacked(bool color, int square) {
+	
+	uint64_t kingBoard = (1ULL << square);
+	uint64_t friendlyPieces = this->colorBoards[color];
     uint64_t enemyPieces = this->colorBoards[!color];
 
 	// gen rays
@@ -307,4 +324,11 @@ bool Board::kingIsAttacked(bool color) {
 	if (kingAttacks & pieceBoards[KING + !color]) return true;
 
 	return false; // King is not attacked
+}
+
+bool Board::kingIsAttacked(bool color) {
+    uint64_t kingBoard = pieceBoards[KING + color];
+    if (kingBoard == 0) return true; // King is missing, attacked
+
+    return this->squareIsAttacked(color, _tzcnt_u64(kingBoard));
 }

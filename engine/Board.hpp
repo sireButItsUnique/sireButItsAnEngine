@@ -44,6 +44,15 @@ public:
 	void movePiece(uint32_t move);
 
 	/**
+	 * @brief checks if the square is attacked by the opponent
+	 *
+	 * @param square square to check
+	 * @param color color of the player to check for attacks
+	 * @return true if the square is attacked, false otherwise
+	 */
+	bool squareIsAttacked(bool color, int square);
+
+	/**
 	 * @brief checks if the king of the mentioned player is attacked
 	 *
 	 * @return true if the king is attacked, false otherwise
