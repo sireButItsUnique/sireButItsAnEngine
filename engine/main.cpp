@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
             // iterative deepening
             else {
                 Search::initSearch(timeCap);
-                depth = 1;
+                depth = 0;
                 for ( ; depth < 16; ++depth) {
                     uint32_t tmp = Search::bestMoves(board, depth, -INFINITE_SCORE, INFINITE_SCORE, moveHistory);
                     

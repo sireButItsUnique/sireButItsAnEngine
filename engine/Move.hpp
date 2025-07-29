@@ -128,7 +128,10 @@ namespace Move {
 			else return (castleSide(data) ? "e1c1" : "e1g1");
 		}
 
-		if (isPromotion(data)) return (TO_ALGEBRA(from(data)) + TO_ALGEBRA(to(data))); // add promotion piece logic
+		if (isPromotion(data)) {
+			string pieces = "pnbrq";
+			return (TO_ALGEBRA(from(data)) + TO_ALGEBRA(to(data)) + pieces[promotionPiece(data) / 2]);
+		}
 		return (TO_ALGEBRA(from(data)) + TO_ALGEBRA(to(data)));
 	}
 };
