@@ -127,7 +127,15 @@ int main(int argc, char *argv[]) {
                     if (Search::ABORT_SEARCH) break;
                     move = moveHistory[depth];
                     eval = tmp;
-                    cout << "info depth " << depth << endl;
+                    cout << "info depth " << depth;
+                    cout << " score cp " << eval;
+                    cout << " nodes " << Search::NODE_COUNT;
+                    cout << " time " << chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start).count();
+                    cout << " pv ";
+                    for (int i = depth; i >= 0; --i) {
+                        cout << Move::toAlgebra(moveHistory[i]) << " ";
+                    }
+                    cout << endl;
                 }
                 depth--;
             }
@@ -136,11 +144,6 @@ int main(int argc, char *argv[]) {
             // outputing the results
             auto end = chrono::high_resolution_clock::now();
             int64_t time_taken = chrono::duration_cast<chrono::milliseconds>(end - start).count();
-            cout << "info string Evaluated to depth " << depth;
-            cout << " with " << Search::NODE_COUNT;
-            cout << " nodes in " << time_taken;
-            cout << "ms (" << fixed << setprecision(2) << ((Search::NODE_COUNT / time_taken) * 1000) << " nps)" << endl;
-            cout << "info string Eval: " << eval << endl;
             cout << "bestmove " << Move::toAlgebra(move) << endl;
         }
 
