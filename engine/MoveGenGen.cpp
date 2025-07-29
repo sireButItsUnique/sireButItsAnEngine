@@ -263,3 +263,48 @@ void MoveGen::genCastlingMoves(Board& board, vector<uint32_t>& moves, bool color
 		}
 	}
 }
+
+bool Board::kingIsAttacked(bool color) {
+    uint64_t kingBoard = pieceBoards[KING + color];
+    if (kingBoard == 0) return true; // King is missing, attacked
+
+    uint64_t friendlyPieces = this->colorBoards[color];
+    uint64_t enemyPieces = this->colorBoards[!color];
+
+	// gen rays
+    uint8_t from = _tzcnt_u64(kingBoard);
+    uint64_t rookBlockers = rookRays[from];
+    uint64_t bishopBlockers = bishopRays[from];
+
+    // gen relevant bits + lookup
+    rookBlockers = _pext_u64(friendlyPieces | enemyPieces, rookBlockers);
+    bishopBlockers = _pext_u64(friendlyPieces | enemyPieces, bishopBlockers);
+    uint64_t rookAttacks = rookLookup[rookLookupOffsets[from] + rookBlockers];
+    uint64_t bishopAttacks = bishopLookup[bishopLookupOffsets[from] + bishopBlockers];
+    uint64_t queenAttacks = rookAttacks | bishopAttacks;
+    
+
+    // check slide attacks
+    if (queenAttacks & pieceBoards[QUEEN + !color]) return true;
+	if (rookAttacks & pieceBoards[ROOK + !color]) return true;
+	if (bishopAttacks & pieceBoards[BISHOP + !color]) return true;
+
+	// check pawn attacks
+	if (color == BLACK) { // black -> check for white pawns
+		if ((kingBoard >> 9) & 0x7f7f7f7f7f7f7f7f & pieceBoards[PAWN + WHITE]) return true;
+		if ((kingBoard >> 7) & 0xfefefefefefefefe & pieceBoards[PAWN + WHITE]) return true;
+	} else { // white -> check for black pawns
+		if ((kingBoard << 9) & 0xfefefefefefefefe & pieceBoards[PAWN + BLACK]) return true;
+		if ((kingBoard << 7) & 0x7f7f7f7f7f7f7f7f & pieceBoards[PAWN + BLACK]) return true;
+	}
+
+	// check knight attacks
+	uint64_t knightAttacks = knightLookup[from];
+	if (knightAttacks & pieceBoards[KNIGHT + !color]) return true;
+
+	// check king attacks
+	uint64_t kingAttacks = kingLookup[from];
+	if (kingAttacks & pieceBoards[KING + !color]) return true;
+
+	return false; // King is not attacked
+}

@@ -45,8 +45,60 @@ void Board::setStartingPos() {
     turn = WHITE; // White starts
 }
 
-void Board::setFenPos(string fen) {
-    // TODO: Implement FEN parsing logic
+void Board::setFenPos(string pos, string turn, string castling, string enPassant) {
+    
+    // Set board position
+    for (int i = 0; i < 12; ++i) pieceBoards[i] = 0;
+    colorBoards[WHITE] = 0;
+    colorBoards[BLACK] = 0;
+    int square = 0;
+    for (char c : pos) {
+        if (c >= '1' && c <= '8') {
+            square = min(square + (c - '0'), 8 * (square / 8) + 7); // Clamp to row
+        } else if (c == '/') {
+            square++;
+        } else {
+            // Set piece on board
+            int piece = 0;
+            switch (c) {
+                case 'P': piece = PAWN + WHITE; break;
+                case 'p': piece = PAWN + BLACK; break;
+                case 'N': piece = KNIGHT + WHITE; break;
+                case 'n': piece = KNIGHT + BLACK; break;
+                case 'B': piece = BISHOP + WHITE; break;
+                case 'b': piece = BISHOP + BLACK; break;
+                case 'R': piece = ROOK + WHITE; break;
+                case 'r': piece = ROOK + BLACK; break;
+                case 'Q': piece = QUEEN + WHITE; break;
+                case 'q': piece = QUEEN + BLACK; break;
+                case 'K': piece = KING + WHITE; break;
+                case 'k': piece = KING + BLACK; break;
+            }
+            pieceBoards[piece] |= (1ULL << FENIDX_TO_SQUARE(square));
+            square = min(square + 1, 8 * (square / 8) + 7); // Clamp to row
+        }
+    }
+    for (int i = 0; i < 12; ++i) {
+        colorBoards[i % 2] |= pieceBoards[i]; // Update color boards
+    }
+
+    // Set turn
+    if (turn == "w") this->turn = WHITE;
+    else this->turn = BLACK;
+
+    // Set castling rights
+    whiteKingCastle = false;
+    blackKingCastle = false;
+    whiteQueenCastle = false;
+    blackQueenCastle = false;
+    for (char c : castling) {
+        if (c == 'K') whiteKingCastle = true;
+        else if (c == 'Q') whiteQueenCastle = true;
+        else if (c == 'k') blackKingCastle = true;
+        else if (c == 'q') blackQueenCastle = true;
+    }
+
+    // TODO: En Passant not implemented yet
 }
 
 void Board::movePiece(uint32_t move) {

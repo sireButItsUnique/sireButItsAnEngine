@@ -15,3 +15,9 @@ int TO_SQUARE(int col, int row) {
 string TO_ALGEBRA(int square) {
     return string(1, 'a' + (square % 8)) + string(1, '1' + (square / 8));
 }
+
+int FENIDX_TO_SQUARE(int idx) {
+    int row = 7 - (idx / 8);
+    int col = idx % 8;
+    return TO_SQUARE(col + 'a', row + '1');
+}

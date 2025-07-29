@@ -5,6 +5,7 @@ void SPLIT_STRING(string, vector<string>&);
 
 int TO_SQUARE(int, int);
 string TO_ALGEBRA(int);
+int FENIDX_TO_SQUARE(int idx);
 
 #define PAWN 0
 #define KNIGHT 2
@@ -28,5 +29,5 @@ string TO_ALGEBRA(int);
 #define WEST 6
 #define NORTHWEST 7
 
-#define MATE_SCORE 400000
-#define INFINITE_SCORE 900000
+#define MATE_SCORE 4e7
+#define INFINITE_SCORE 9e7

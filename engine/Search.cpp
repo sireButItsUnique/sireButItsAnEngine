@@ -65,18 +65,22 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
         newBoard.movePiece(move); // Make the move
 
         if (newBoard.pieceBoards[KING + newBoard.turn] == 0) return MATE_SCORE; // Check for checkmate
+        if (newBoard.kingIsAttacked(board.turn)) continue; // Skip moves that leave the king in check
 
         // Evaluate the new position
         int32_t score = -Search::finishCaptures(newBoard, -beta, -alpha, depth + 1); // Negate for minimax
 
         // Prune if move is too good -> opp has a better move last ply
-        if (score >= beta) return beta;
+        if (score >= beta) return score;
         eval = max(eval, score);
         alpha = max(alpha, eval);
     }
 
     // Return the evaluated score
-    if (abs(eval) > MATE_SCORE - 100) return eval - 1;
+    if (abs(eval) > MATE_SCORE - 100) {
+        if (eval > 0) return eval - 1;
+        else return eval + 1;
+    }
     return eval;
 }
 
@@ -97,10 +101,15 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     int32_t eval = -INFINITE_SCORE; // Initialize to a very low value
 
     // Iterate through all possible moves
+    int illegals = 0;
     for (uint32_t move : moves) {
         Board newBoard = board; // Create a copy of the board
         newBoard.movePiece(move); // Make the move
-        if (newBoard.pieceBoards[KING + newBoard.turn] == 0) return MATE_SCORE; // Check for checkmate
+        //if (newBoard.pieceBoards[KING + newBoard.turn] == 0) return MATE_SCORE; // Check for checkmate
+        if (newBoard.kingIsAttacked(board.turn)) {
+            illegals++;
+            continue; // Skip moves that leave the king in check
+        }
 
         // Evaluate the new position
         int32_t score; // Negative because score is from opponent's perspective
@@ -108,7 +117,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         else score = -Search::finishCaptures(newBoard, -beta, -alpha, 1); // Leaf node evaluation
 
         // Prune if move is too good -> opp has a better move last ply
-        if (score >= beta) return beta;
+        if (score >= beta) return score;
 			
         if (score > eval) {
             eval = score;
@@ -123,7 +132,16 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     }
 
     // Return the evaluated score
-    if (moves.empty()) return evalBoard(board);
-    if (abs(eval) > MATE_SCORE - 100) return eval - 1;
+    if (abs(eval) > MATE_SCORE - 100) {
+        if (eval > 0) return eval - 1;
+        else return eval + 1;
+    }
+    if (illegals == moves.size()) return -MATE_SCORE;
     return eval;
 }
+
+/*
+white 
+black 
+white
+*/

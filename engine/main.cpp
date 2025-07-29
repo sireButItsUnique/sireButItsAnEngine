@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
             
             // set initial position
             if (tokens[1] == "startpos") board.setStartingPos();
-            else if (tokens[1] == "fen") board.setFenPos(tokens[2]);
+            else if (tokens[1] == "fen") board.setFenPos(tokens[2], tokens[3], tokens[4], tokens[5]);
 
             // add moves to position 
             if (tokens[1] == "startpos" && tokens.size() > 2) {
@@ -73,7 +73,26 @@ int main(int argc, char *argv[]) {
                 }
             }
             if (tokens[1] == "fen" && tokens.size() > 8) {
+                for (int i = 9; i < tokens.size(); ++i) {
+                    uint32_t move = 0;
+                    Move::setColor(move, board.turn);
 
+                    if (tokens[i] == "e1g1" && board.whiteKingCastle) {
+                        Move::setCastle(move, true);
+                    } else if (tokens[i] == "e1c1" && board.whiteQueenCastle) {
+                        Move::setCastle(move, false);
+                    } else if (tokens[i] == "e8g8" && board.blackKingCastle) {
+                        Move::setCastle(move, true);
+                    } else if (tokens[i] == "e8c8" && board.blackQueenCastle) {
+                        Move::setCastle(move, false);
+                    } else {
+                        int from = TO_SQUARE(tokens[i][0], tokens[i][1]);
+                        int to = TO_SQUARE(tokens[i][2], tokens[i][3]);
+                        Move::setPosition(move, from, to);
+                    }
+
+                    board.movePiece(move);
+                }
             }
         } 
         

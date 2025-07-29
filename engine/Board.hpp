@@ -34,7 +34,7 @@ public:
 	 *
 	 * @param fen string representing the position in FEN format
 	 */
-	void setFenPos(string fen);
+	void setFenPos(string pos, string turn, string castling, string enPassant);
 
 	/**
 	 * @brief move piece in standard piece bitboards
@@ -42,6 +42,13 @@ public:
 	 * @param move move to make
 	 */
 	void movePiece(uint32_t move);
+
+	/**
+	 * @brief checks if the king of the mentioned player is attacked
+	 *
+	 * @return true if the king is attacked, false otherwise
+	 */
+	bool kingIsAttacked(bool color);
 
 	/**
 	 * @brief prints the board to stdout
