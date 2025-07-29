@@ -80,7 +80,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
     return eval;
 }
 
-int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, vector<uint32_t>& PV) {
+int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, vector<vector<uint32_t>>& PV) {
     
     // Time management
     if (Search::ABORT_SEARCH) return 0;
@@ -114,7 +114,10 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
             eval = score;
             if (score > alpha) {
                 alpha = score;
-                PV[depth] = move; // Store the best move for this depth
+                PV[depth][0] = move; // Store the best move for this depth
+                if (depth > 0) {
+                    for (int i = 0; i + 1 < 64; ++i) PV[depth][i + 1] = PV[depth - 1][i];
+                }
             }
         }
     }

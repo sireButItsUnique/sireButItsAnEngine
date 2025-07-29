@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
     // Run benchmark
     if (argc == 2 && std::string(argv[1]) == "bench") {
         board.setStartingPos();
-        vector<uint32_t> moveHistory(64, 0);
+        vector<vector<uint32_t>> moveHistory(64, vector<uint32_t>(64, 0));
         Search::initSearch(INFINITE_SCORE);
         auto start = chrono::high_resolution_clock::now();
         
@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
         auto end = chrono::high_resolution_clock::now();
         double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
         time_taken *= 1e-9;
-        cout << Search::NODE_COUNT << " nodes " << fixed << setprecision(2) << (Search::NODE_COUNT / time_taken) << " nps" << std::endl;
+        cout << Search::NODE_COUNT << " nodes " << fixed << setprecision(2) << int64_t(Search::NODE_COUNT / time_taken) << " nps" << std::endl;
         return 0;
     }
 
@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
             int64_t timeCap = max(int64_t(100), timeLeft / 10);
 
             // initiating search
-            vector<uint32_t> moveHistory(64, 0);
+            vector<vector<uint32_t>> moveHistory(64, vector<uint32_t>(64, 0));
             int32_t eval = 0;
             uint32_t move = 0;
             auto start = chrono::high_resolution_clock::now();
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
             if (depth != -1) {
                 Search::initSearch(INFINITE_SCORE);
                 eval = Search::bestMoves(board, depth, -INFINITE_SCORE, INFINITE_SCORE, moveHistory);
-                move = moveHistory[depth];
+                move = moveHistory[depth][0];
             } 
             
             // iterative deepening
@@ -125,15 +125,16 @@ int main(int argc, char *argv[]) {
                     uint32_t tmp = Search::bestMoves(board, depth, -INFINITE_SCORE, INFINITE_SCORE, moveHistory);
                     
                     if (Search::ABORT_SEARCH) break;
-                    move = moveHistory[depth];
+                    move = moveHistory[depth][0];
                     eval = tmp;
                     cout << "info depth " << depth;
                     cout << " score cp " << eval;
                     cout << " nodes " << Search::NODE_COUNT;
                     cout << " time " << chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start).count();
                     cout << " pv ";
-                    for (int i = depth; i >= 0; --i) {
-                        cout << Move::toAlgebra(moveHistory[i]) << " ";
+                    for (int i = 0; i < 64; ++i) {
+                        if (!moveHistory[depth][i]) break;
+                        cout << Move::toAlgebra(moveHistory[depth][i]) << " ";
                     }
                     cout << endl;
                 }

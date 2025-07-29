@@ -38,5 +38,5 @@ namespace Search {
      * @param PV Stores the best moves
      * @return An integer score representing the evaluation of the best move.
      */
-    int32_t bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, vector<uint32_t>& PV);
+    int32_t bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, vector<vector<uint32_t>>& PV);
 }
