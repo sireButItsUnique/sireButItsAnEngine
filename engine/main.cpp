@@ -69,6 +69,15 @@ int main(int argc, char *argv[]) {
                         Move::setPosition(move, from, to);
                     }
 
+                    if (tokens[i].size() == 5) {
+                        switch (tokens[i][4]) {
+                            case 'n': Move::setPromotion(move, KNIGHT); break;
+                            case 'b': Move::setPromotion(move, BISHOP); break;
+                            case 'r': Move::setPromotion(move, ROOK); break;
+                            case 'q': Move::setPromotion(move, QUEEN); break;
+                        }
+                    }
+
                     board.movePiece(move);
                 }
             }
@@ -89,6 +98,15 @@ int main(int argc, char *argv[]) {
                         int from = TO_SQUARE(tokens[i][0], tokens[i][1]);
                         int to = TO_SQUARE(tokens[i][2], tokens[i][3]);
                         Move::setPosition(move, from, to);
+                    }
+
+                    if (tokens[i].size() == 5) {
+                        switch (tokens[i][4]) {
+                            case 'n': Move::setPromotion(move, KNIGHT); break;
+                            case 'b': Move::setPromotion(move, BISHOP); break;
+                            case 'r': Move::setPromotion(move, ROOK); break;
+                            case 'q': Move::setPromotion(move, QUEEN); break;
+                        }
                     }
 
                     board.movePiece(move);
