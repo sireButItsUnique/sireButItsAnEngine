@@ -20,16 +20,16 @@ int32_t evalBoard(Board& board) {
     int32_t score = 0;
 
     // Evaluate material balance
-    score += __popcnt64(board.pieceBoards[PAWN + board.turn]) * 100; // Pawns
-    score -= __popcnt64(board.pieceBoards[PAWN + !board.turn]) * 100;
-    score += __popcnt64(board.pieceBoards[KNIGHT + board.turn]) * 300; // Knights
-    score -= __popcnt64(board.pieceBoards[KNIGHT + !board.turn]) * 300;
-    score += __popcnt64(board.pieceBoards[BISHOP + board.turn]) * 350; // Bishops
-    score -= __popcnt64(board.pieceBoards[BISHOP + !board.turn]) * 350;
-    score += __popcnt64(board.pieceBoards[ROOK + board.turn]) * 500; // Rooks
-    score -= __popcnt64(board.pieceBoards[ROOK + !board.turn]) * 500;
-    score += __popcnt64(board.pieceBoards[QUEEN + board.turn]) * 900; // Queens
-    score -= __popcnt64(board.pieceBoards[QUEEN + !board.turn]) * 900;
+    score += _popcnt64(board.pieceBoards[PAWN + board.turn]) * 100; // Pawns
+    score -= _popcnt64(board.pieceBoards[PAWN + !board.turn]) * 100;
+    score += _popcnt64(board.pieceBoards[KNIGHT + board.turn]) * 300; // Knights
+    score -= _popcnt64(board.pieceBoards[KNIGHT + !board.turn]) * 300;
+    score += _popcnt64(board.pieceBoards[BISHOP + board.turn]) * 350; // Bishops
+    score -= _popcnt64(board.pieceBoards[BISHOP + !board.turn]) * 350;
+    score += _popcnt64(board.pieceBoards[ROOK + board.turn]) * 500; // Rooks
+    score -= _popcnt64(board.pieceBoards[ROOK + !board.turn]) * 500;
+    score += _popcnt64(board.pieceBoards[QUEEN + board.turn]) * 900; // Queens
+    score -= _popcnt64(board.pieceBoards[QUEEN + !board.turn]) * 900;
 
     return score;
 }

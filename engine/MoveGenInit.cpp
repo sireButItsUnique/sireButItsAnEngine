@@ -230,11 +230,11 @@ void MoveGen::init() {
 	}
 	rookLookupOffsets[0] = 0;
 	for (int i = 1; i < 64; i++) {
-		rookLookupOffsets[i] = rookLookupOffsets[i - 1] + (1ULL << __popcnt64(rookRays[i - 1]));
+		rookLookupOffsets[i] = rookLookupOffsets[i - 1] + (1ULL << _popcnt64(rookRays[i - 1]));
 	}
 
     for (int square = 0; square < 64; square++) {
-		uint64_t maxPos = 1ULL << __popcnt64(rookRays[square]);
+		uint64_t maxPos = 1ULL << _popcnt64(rookRays[square]);
 		uint64_t rook = 1ULL << square;
 		for (uint64_t i = 0; i < maxPos; i++) {
 			uint64_t blockers = _pdep_u64(i, rookRays[square]);
@@ -256,11 +256,11 @@ void MoveGen::init() {
 	}
 	bishopLookupOffsets[0] = 0;
 	for (int i = 1; i < 64; i++) {
-		bishopLookupOffsets[i] = bishopLookupOffsets[i - 1] + (1ULL << __popcnt64(bishopRays[i - 1]));
+		bishopLookupOffsets[i] = bishopLookupOffsets[i - 1] + (1ULL << _popcnt64(bishopRays[i - 1]));
 	}
 
     for (int square = 0; square < 64; square++) {
-		uint64_t maxPos = 1ULL << __popcnt64(bishopRays[square]);
+		uint64_t maxPos = 1ULL << _popcnt64(bishopRays[square]);
 		uint64_t bishop = 1ULL << square;
 		for (uint64_t i = 0; i < maxPos; i++) {
 			uint64_t blockers = _pdep_u64(i, bishopRays[square]);
