@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
             }
 
             int64_t timeLeft = (board.turn == WHITE) ? wtime : btime;
-            int64_t timeCap = max(100LL, timeLeft / 10);
+            int64_t timeCap = max(int64_t(100), timeLeft / 10);
 
             // initiating search
             vector<uint32_t> moveHistory(64, 0);
@@ -127,6 +127,7 @@ int main(int argc, char *argv[]) {
                     if (Search::ABORT_SEARCH) break;
                     move = moveHistory[depth];
                     eval = tmp;
+                    cout << "info depth " << depth << endl;
                 }
                 depth--;
             }
