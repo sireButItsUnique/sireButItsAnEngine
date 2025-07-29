@@ -164,10 +164,12 @@ int main(int argc, char *argv[]) {
                     if (Search::ABORT_SEARCH) break;
                     move = moveHistory[depth][0];
                     eval = tmp;
+                    double time_taken = 1e-9 * chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - start).count();
                     cout << "info depth " << depth;
                     cout << " score cp " << eval;
                     cout << " nodes " << Search::NODE_COUNT;
                     cout << " time " << chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start).count();
+                    cout << " nps " << int64_t(Search::NODE_COUNT / time_taken);
                     cout << " pv ";
                     for (int i = 0; i < 64; ++i) {
                         if (!moveHistory[depth][i]) break;
