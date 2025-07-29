@@ -13,8 +13,8 @@ int main(int argc, char *argv[]) {
     // Run benchmark
     if (argc == 2 && std::string(argv[1]) == "bench") {
         board.setStartingPos();
-        vector<vector<uint32_t>> moveHistory(64, vector<uint32_t>(64, 0));
-        Search::count = 0;
+        vector<uint32_t> moveHistory(64, 0);
+        Search::initSearch(INFINITE_SCORE);
         auto start = chrono::high_resolution_clock::now();
         
         Search::bestMoves(board, 5, -INFINITE_SCORE, INFINITE_SCORE, moveHistory);
@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
         auto end = chrono::high_resolution_clock::now();
         double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
         time_taken *= 1e-9;
-        cout << Search::count << " nodes " << fixed << setprecision(2) << (Search::count / time_taken) << " nps" << std::endl;
+        cout << Search::NODE_COUNT << " nodes " << fixed << setprecision(2) << (Search::NODE_COUNT / time_taken) << " nps" << std::endl;
         return 0;
     }
 
@@ -101,35 +101,44 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            int64_t timeLimit = (board.turn == WHITE) ? wtime : btime;
-            if (depth == -1) {
-                if (timeLimit < 60 * 1000) depth = 2;
-                else depth = 3;
-            }
+            int64_t timeLeft = (board.turn == WHITE) ? wtime : btime;
+            int64_t timeCap = max(100LL, timeLeft / 10);
 
             // initiating search
-            vector<vector<uint32_t>> moveHistory(64, vector<uint32_t>(64, 0));
-            Search::count = 0;
+            vector<uint32_t> moveHistory(64, 0);
+            int32_t eval = 0;
+            uint32_t move = 0;
             auto start = chrono::high_resolution_clock::now();
             
-            int32_t eval = Search::bestMoves(board, depth, -INFINITE_SCORE, INFINITE_SCORE, moveHistory);
+            // static depth search if depth is given
+            if (depth != -1) {
+                Search::initSearch(INFINITE_SCORE);
+                eval = Search::bestMoves(board, depth, -INFINITE_SCORE, INFINITE_SCORE, moveHistory);
+                move = moveHistory[depth];
+            } 
+            
+            // iterative deepening
+            else {
+                Search::initSearch(timeCap);
+                depth = 1;
+                for ( ; depth < 16; ++depth) {
+                    uint32_t tmp = Search::bestMoves(board, depth, -INFINITE_SCORE, INFINITE_SCORE, moveHistory);
+                    
+                    if (Search::ABORT_SEARCH) break;
+                    move = moveHistory[depth];
+                    eval = tmp;
+                }
+                depth--;
+            }
+            
 
             // outputing the results
             auto end = chrono::high_resolution_clock::now();
-            double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
-            time_taken *= 1e-9;
-            uint32_t move = moveHistory[depth][0];
-            for (int i = 0; i <= depth; ++i) {
-                cout << "info string Depth " << i << ": ";
-                for (int j = 0; j < 64; ++j) {
-                    if (moveHistory[i][j] != 0) {
-                        cout << Move::toAlgebra(moveHistory[i][j]) << " ";
-                    }
-                }
-                cout << endl;
-            }
-
-            cout << "info string Evaluated " << Search::count << " positions in " << fixed << time_taken << setprecision(4) << " secs (" << (Search::count / time_taken) << " pos/s)" << endl;
+            int64_t time_taken = chrono::duration_cast<chrono::milliseconds>(end - start).count();
+            cout << "info string Evaluated to depth " << depth;
+            cout << " with " << Search::NODE_COUNT;
+            cout << " nodes in " << time_taken;
+            cout << "ms (" << fixed << setprecision(2) << ((Search::NODE_COUNT / time_taken) * 1000) << " nps)" << endl;
             cout << "info string Eval: " << eval << endl;
             cout << "bestmove " << Move::toAlgebra(move) << endl;
         }

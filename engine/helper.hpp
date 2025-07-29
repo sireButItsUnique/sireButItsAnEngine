@@ -1,5 +1,6 @@
 #pragma once
 #include "includes.hpp"
+typedef std::chrono::time_point<std::chrono::high_resolution_clock> TimePoint;
 void SPLIT_STRING(string, vector<string>&);
 
 int TO_SQUARE(int, int);

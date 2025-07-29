@@ -1,4 +1,4 @@
-EXE ?= bongcloud
+EXE ?= sireButItsAnEngine
 EVALFILE ?= nnue.bin
 
 CXX := g++
