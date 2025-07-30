@@ -60,6 +60,16 @@ public:
 	bool kingIsAttacked(bool color);
 
 	/**
+	 * @brief checks if the move is a capturing move
+	 *
+	 * @param move move to check
+	 * @return true if the move is a capturing move, false otherwise
+	 */
+	inline bool moveIsCapture(uint32_t move) {
+		return ((1ULL << Move::to(move)) & colorBoards[!Move::color(move)]);
+	}
+
+	/**
 	 * @brief prints the board to stdout
 	 */
 	void print();

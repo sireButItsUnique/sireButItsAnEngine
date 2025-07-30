@@ -3,6 +3,7 @@ using namespace Search;
 
 namespace Search {
     vector<vector<int32_t>> history;
+    vector<vector<int32_t>> qhistory;
     int64_t NODE_COUNT;
     TimePoint START_TIME;
     int64_t TIME_LIMIT;
@@ -11,7 +12,8 @@ namespace Search {
 }
 
 void Search::initSearch(int64_t timeLimit) {
-    history = vector<vector<int32_t>>(64, vector<int32_t>(4096 + 5, -90000000)); // Initialize history for move ordering
+    history = vector<vector<int32_t>>(36, vector<int32_t>(4096 + 5, -90000000)); // Initialize history for move ordering
+    qhistory = vector<vector<int32_t>>(36, vector<int32_t>(4096 + 5, -90000000)); // Initialize qsearch history for move ordering
     START_TIME = chrono::high_resolution_clock::now();
     TIME_LIMIT = timeLimit;
     ABORT_SEARCH = false;
@@ -41,16 +43,14 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
     
     // Time management
     if (Search::ABORT_SEARCH) return 0;
-    int64_t timeUsed = chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - Search::START_TIME).count();
-    if (timeUsed > Search::TIME_LIMIT) {
-        Search::ABORT_SEARCH = true;
-        return 0;
+    if ((NODE_COUNT & 1023) == 0) {
+        int64_t timeUsed = chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - Search::START_TIME).count();
+        if (timeUsed > Search::TIME_LIMIT) {
+            Search::ABORT_SEARCH = true;
+            return 0;
+        }
     }
     Search::NODE_COUNT++; 
-    
-    // Generate all possible moves for the current player
-    vector<uint32_t> moves;
-    MoveGen::genMoves(board, moves, board.turn);
 
     // Initialize evaluation score
     int32_t eval = -INFINITE_SCORE; // Initialize to a very low value
@@ -58,12 +58,24 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
     if (staticEval >= beta) return beta;
     if (staticEval > alpha) alpha = staticEval;
     eval = staticEval; // Start with static evaluation since we are not forced to play a capture
+
+    // Generate all possible moves for the current player
+    vector<uint32_t> moves;
+    vector<uint32_t> captures;
+    moves.reserve(240);
+    captures.reserve(240);
+    MoveGen::genMoves(board, moves, board.turn);
+
+    // Collect capturing moves and sort them by qsearch history
+    for (uint32_t move : moves) {
+        if (!Move::isCastle(move) && board.moveIsCapture(move)) captures.push_back(move); // Collect capturing moves
+    }
+    stable_sort(captures.begin(), captures.end(), [depth](uint32_t a, uint32_t b) {
+        return (Search::qhistory[depth][(a & 0x3ffc000) >> 14] > Search::qhistory[depth][(b & 0x3ffc000) >> 14]);
+    });
     
     // Iterate through all capturing moves
-    for (uint32_t move : moves) {
-        if (Move::isCastle(move)) continue; // Skip castling moves for captures
-        if (!((1ULL << Move::to(move)) & board.colorBoards[!board.turn])) continue; // Skip moves that don't capture
-        
+    for (uint32_t move : captures) {
         Board newBoard = board; // Create a copy of the board
         newBoard.movePiece(move); // Make the move
 
@@ -72,6 +84,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
 
         // Evaluate the new position
         int32_t score = -Search::finishCaptures(newBoard, -beta, -alpha, depth + 1); // Negate for minimax
+        Search::qhistory[depth][(move & 0x3ffc000) >> 14] = score; // Update qsearch history for move ordering
 
         // Prune if move is too good -> opp has a better move last ply
         if (score >= beta) return score;
@@ -91,15 +104,18 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     
     // Time management
     if (Search::ABORT_SEARCH) return 0;
-    int64_t timeUsed = chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - Search::START_TIME).count();
-    if (timeUsed > Search::TIME_LIMIT) {
-        Search::ABORT_SEARCH = true;
-        return 0;
+    if ((NODE_COUNT & 1023) == 0) {
+        int64_t timeUsed = chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - Search::START_TIME).count();
+        if (timeUsed > Search::TIME_LIMIT) {
+            Search::ABORT_SEARCH = true;
+            return 0;
+        }
     }
     Search::NODE_COUNT++; 
     
     // Generate moves and order them
     vector<uint32_t> moves;
+    moves.reserve(240);
     MoveGen::genMoves(board, moves, board.turn);
     int realDepth = MAX_DEPTH - depth; // Adjust depth for history table
     stable_sort(moves.begin(), moves.end(), [realDepth](uint32_t a, uint32_t b) {
@@ -114,7 +130,6 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     for (uint32_t move : moves) {
         Board newBoard = board; // Create a copy of the board
         newBoard.movePiece(move); // Make the move
-        //if (newBoard.pieceBoards[KING + newBoard.turn] == 0) return MATE_SCORE; // Check for checkmate
         if (newBoard.kingIsAttacked(board.turn)) {
             illegals++;
             continue; // Skip moves that leave the king in check
@@ -123,7 +138,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         // Evaluate the new position
         int32_t score; // Negative because score is from opponent's perspective
         if (depth > 0) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV); // Negate for minimax
-        else score = -Search::finishCaptures(newBoard, -beta, -alpha, 1); // Leaf node evaluation
+        else score = -Search::finishCaptures(newBoard, -beta, -alpha, 0); // Leaf node evaluation
         Search::history[realDepth][(move & 0x3ffc000) >> 14] = score; // Update history table for move ordering
 
         // Prune if move is too good -> opp has a better move last ply
@@ -149,9 +164,3 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     if (illegals == moves.size()) return -MATE_SCORE;
     return eval;
 }
-
-/*
-white 
-black 
-white
-*/
