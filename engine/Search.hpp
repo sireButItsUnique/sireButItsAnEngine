@@ -14,6 +14,12 @@ namespace Search {
     extern vector<vector<int32_t>> history;
 
     /**
+     * @brief Stores the killer moves for each depth.
+     * This is a 2D vector, killer[depth][0] = best move, killer[depth][1] = second best move
+     */
+    extern vector<vector<uint32_t>> killer;
+
+    /**
      * @brief The number of nodes evaluated during the search.
      */
     extern int64_t NODE_COUNT;

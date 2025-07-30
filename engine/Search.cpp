@@ -3,6 +3,7 @@ using namespace Search;
 
 namespace Search {
     vector<vector<int32_t>> history;
+    vector<vector<uint32_t>> killer;
     int64_t NODE_COUNT;
     TimePoint START_TIME;
     int64_t TIME_LIMIT;
@@ -12,6 +13,7 @@ namespace Search {
 
 void Search::initSearch(int64_t timeLimit) {
     history = vector<vector<int32_t>>(64, vector<int32_t>(4096 + 5, -90000000)); // Initialize history for move ordering
+    killer = vector<vector<uint32_t>>(64, vector<uint32_t>(2, 0)); // Initialize killer moves
     START_TIME = chrono::high_resolution_clock::now();
     TIME_LIMIT = timeLimit;
     ABORT_SEARCH = false;
@@ -62,7 +64,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
     // Iterate through all capturing moves
     for (uint32_t move : moves) {
         if (Move::isCastle(move)) continue; // Skip castling moves for captures
-        if (!((1ULL << Move::to(move)) & board.colorBoards[!board.turn])) continue; // Skip moves that don't capture
+        if (!board.moveIsCapture(move)) continue; // Skip moves that don't capture
         
         Board newBoard = board; // Create a copy of the board
         newBoard.movePiece(move); // Make the move
@@ -102,19 +104,28 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     vector<uint32_t> moves;
     MoveGen::genMoves(board, moves, board.turn);
     int realDepth = MAX_DEPTH - depth; // Adjust depth for history table
-    stable_sort(moves.begin(), moves.end(), [realDepth](uint32_t a, uint32_t b) {
-        return Search::history[realDepth][(a & 0x3ffc000) >> 14] > Search::history[realDepth][(b & 0x3ffc000) >> 14];
-    });
+    
+    vector<pair<int32_t, uint32_t>> moveScores(moves.size());
+    for (int i = 0; i < moves.size(); ++i) {
+        int32_t score = history[realDepth][(moves[i] & 0x3ffc000) >> 14]; // Extract historical eval of the move for history table
+        if (killer[realDepth][0] == moves[i] || killer[realDepth][1] == moves[i]) score += 150; // Prioritize killer moves
+        moveScores[i] = {score, moves[i]};
+    }
+    stable_sort(moveScores.rbegin(), moveScores.rend());
 
     // Initialize evaluation score to a very low value
     int32_t eval = -INFINITE_SCORE;
 
     // Iterate through all possible moves
     int illegals = 0;
-    for (uint32_t move : moves) {
+    for (pair<int32_t, uint32_t>& m : moveScores) {
+        
+        // Copy-make move
+        uint32_t move = m.second;
         Board newBoard = board; // Create a copy of the board
         newBoard.movePiece(move); // Make the move
-        //if (newBoard.pieceBoards[KING + newBoard.turn] == 0) return MATE_SCORE; // Check for checkmate
+        
+        // Check legality of the move
         if (newBoard.kingIsAttacked(board.turn)) {
             illegals++;
             continue; // Skip moves that leave the king in check
@@ -127,7 +138,13 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         Search::history[realDepth][(move & 0x3ffc000) >> 14] = score; // Update history table for move ordering
 
         // Prune if move is too good -> opp has a better move last ply
-        if (score >= beta) return score;
+        if (score >= beta) {
+            if (!board.moveIsCapture(move)) {
+                killer[realDepth][1] = killer[realDepth][0];
+                killer[realDepth][0] = move; // Update killer moves
+            }
+            return score;
+        }
 			
         if (score > eval) {
             eval = score;
