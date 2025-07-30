@@ -3,3 +3,4 @@ bongcloud
 .vscode
 *.out
 /build
+/lichess/node_modules/
