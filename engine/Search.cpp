@@ -108,7 +108,6 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     vector<pair<int32_t, uint32_t>> moveScores(moves.size());
     for (int i = 0; i < moves.size(); ++i) {
         int32_t score = history[realDepth][(moves[i] & 0x3ffc000) >> 14]; // Extract historical eval of the move for history table
-        if (killer[realDepth][0] == moves[i] || killer[realDepth][1] == moves[i]) score += 150; // Prioritize killer moves
         moveScores[i] = {score, moves[i]};
     }
     stable_sort(moveScores.rbegin(), moveScores.rend());
@@ -134,7 +133,8 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         // Evaluate the new position
         int32_t score; // Negative because score is from opponent's perspective
         if (depth > 0) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV); // Negate for minimax
-        else score = -Search::finishCaptures(newBoard, -beta, -alpha, 1); // Leaf node evaluation
+        // else score = -Search::finishCaptures(newBoard, -beta, -alpha, 1); // Leaf node evaluation
+        else score = -evalBoard(newBoard); // Leaf node evaluation
         Search::history[realDepth][(move & 0x3ffc000) >> 14] = score; // Update history table for move ordering
 
         // Prune if move is too good -> opp has a better move last ply
