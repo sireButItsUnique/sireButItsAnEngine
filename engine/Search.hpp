@@ -6,10 +6,37 @@
 #include "MoveGen.hpp"
 
 namespace Search {
+    /**
+     * @brief Stores the historical eval of moves for move ordering.
+     * This is a 2D vector, history[depth][move] = eval
+     * @attention ONLY enter the from and to portion of the move, not the full move
+     */
+    extern vector<vector<int32_t>> history;
+
+    /**
+     * @brief The number of nodes evaluated during the search.
+     */
     extern int64_t NODE_COUNT;
+    
+    /**
+     * @brief The starting time of the search.
+     */
     extern TimePoint START_TIME;
+    
+    /**
+     * @brief The time limit for the search in milliseconds.
+     */
     extern int64_t TIME_LIMIT;
-    extern bool ABORT_SEARCH; // Flag to abort search if needed
+    
+    /**
+     * @brief Flag to abort the search if needed.
+     */
+    extern bool ABORT_SEARCH;
+
+    /**
+     * @brief The maximum search depth.
+     */
+    extern int MAX_DEPTH;
 
     /**
      * @brief Initializes the search parameters.

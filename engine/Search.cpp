@@ -2,13 +2,16 @@
 using namespace Search;
 
 namespace Search {
+    vector<vector<int32_t>> history;
     int64_t NODE_COUNT;
     TimePoint START_TIME;
     int64_t TIME_LIMIT;
+    int MAX_DEPTH;
     bool ABORT_SEARCH; // Flag to abort search if needed
 }
 
 void Search::initSearch(int64_t timeLimit) {
+    history = vector<vector<int32_t>>(64, vector<int32_t>(4096 + 5, -90000000)); // Initialize history for move ordering
     START_TIME = chrono::high_resolution_clock::now();
     TIME_LIMIT = timeLimit;
     ABORT_SEARCH = false;
@@ -95,10 +98,16 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     }
     Search::NODE_COUNT++; 
     
-    // Initialize evaluation score
+    // Generate moves and order them
     vector<uint32_t> moves;
     MoveGen::genMoves(board, moves, board.turn);
-    int32_t eval = -INFINITE_SCORE; // Initialize to a very low value
+    int realDepth = MAX_DEPTH - depth; // Adjust depth for history table
+    stable_sort(moves.begin(), moves.end(), [realDepth](uint32_t a, uint32_t b) {
+        return Search::history[realDepth][(a & 0x3ffc000) >> 14] > Search::history[realDepth][(b & 0x3ffc000) >> 14];
+    });
+
+    // Initialize evaluation score to a very low value
+    int32_t eval = -INFINITE_SCORE;
 
     // Iterate through all possible moves
     int illegals = 0;
@@ -115,6 +124,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         int32_t score; // Negative because score is from opponent's perspective
         if (depth > 0) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV); // Negate for minimax
         else score = -Search::finishCaptures(newBoard, -beta, -alpha, 1); // Leaf node evaluation
+        Search::history[realDepth][(move & 0x3ffc000) >> 14] = score; // Update history table for move ordering
 
         // Prune if move is too good -> opp has a better move last ply
         if (score >= beta) return score;

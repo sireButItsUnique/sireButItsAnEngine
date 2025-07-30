@@ -15,6 +15,7 @@ int main(int argc, char *argv[]) {
         board.setStartingPos();
         vector<vector<uint32_t>> moveHistory(64, vector<uint32_t>(64, 0));
         Search::initSearch(INFINITE_SCORE);
+        Search::MAX_DEPTH = 5;
         auto start = chrono::high_resolution_clock::now();
         
         Search::bestMoves(board, 5, -INFINITE_SCORE, INFINITE_SCORE, moveHistory);
@@ -150,6 +151,7 @@ int main(int argc, char *argv[]) {
             // static depth search if depth is given
             if (depth != -1) {
                 Search::initSearch(INFINITE_SCORE);
+                Search::MAX_DEPTH = depth;
                 eval = Search::bestMoves(board, depth, -INFINITE_SCORE, INFINITE_SCORE, moveHistory);
                 move = moveHistory[depth][0];
             } 
@@ -159,6 +161,7 @@ int main(int argc, char *argv[]) {
                 Search::initSearch(timeCap);
                 depth = 0;
                 for ( ; depth < 16; ++depth) {
+                    Search::MAX_DEPTH = depth;
                     uint32_t tmp = Search::bestMoves(board, depth, -INFINITE_SCORE, INFINITE_SCORE, moveHistory);
                     
                     if (Search::ABORT_SEARCH) break;
