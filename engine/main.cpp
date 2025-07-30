@@ -141,6 +141,7 @@ int main(int argc, char *argv[]) {
 
             int64_t timeLeft = (board.turn == WHITE) ? wtime : btime;
             int64_t timeCap = max(int64_t(100), timeLeft / 10);
+            timeCap = min(timeCap, int64_t(10000)); // Cap time to 10 seconds
 
             // initiating search
             vector<vector<uint32_t>> moveHistory(64, vector<uint32_t>(64, 0));
