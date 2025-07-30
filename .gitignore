@@ -4,4 +4,4 @@ bongcloud
 *.out
 /build
 /lichess/node_modules/
-.env
+*.env
