@@ -6,6 +6,7 @@
 class Board {
 public:
 	uint64_t pieceBoards[12], colorBoards[2];
+	int16_t mailbox[64]; // mailbox for piece positions
 	bool whiteQueenCastle, whiteKingCastle, blackQueenCastle, blackKingCastle;
 
 	/**
@@ -14,13 +15,6 @@ public:
 	bool turn;
 
 	Board();
-
-	/**
-	 * @brief sets the copy of the board to the current position
-	 *
-	 * @param board pointer to the board to copy
-	 */
-	void setCopyBoard(Board* board);
 
 	/**
 	 * @brief sets bitboards to standard starting pos

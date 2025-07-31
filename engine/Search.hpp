@@ -6,12 +6,6 @@
 #include "MoveGen.hpp"
 
 namespace Search {
-    /**
-     * @brief Stores the historical eval of moves for move ordering.
-     * This is a 2D vector, history[depth][move] = eval
-     * @attention ONLY enter the from and to portion of the move, not the full move
-     */
-    extern vector<vector<int32_t>> history;
 
     /**
      * @brief The number of nodes evaluated during the search.
@@ -41,9 +35,17 @@ namespace Search {
     /**
      * @brief Initializes the search parameters.
      *
-     * @param timeLimit The time limit for the search in milliseconds.
+     * @param TIME_LIMIT The time limit for the search in milliseconds.
      */
-    void initSearch(int64_t timeLimit);
+    void initSearch(int64_t TIME_LIMIT);
+
+    /**
+     * @brief Updates the history table for move ordering.
+     *
+     * @param move The move to update.
+     * @param bonus The bonus value to add to the history.
+     */
+    void updateHistory(uint32_t move, int32_t bonus);
     
     /**
      * @brief Evaluates the board position after a "steady" state is reached

@@ -4,19 +4,6 @@ Board::Board() {
     this->setStartingPos();
 }
 
-void Board::setCopyBoard(Board* board) {
-    for (int i = 0; i < 12; ++i) {
-        pieceBoards[i] = board->pieceBoards[i];
-    }
-    colorBoards[WHITE] = board->colorBoards[WHITE];
-    colorBoards[BLACK] = board->colorBoards[BLACK];
-    whiteQueenCastle = board->whiteQueenCastle;
-    whiteKingCastle = board->whiteKingCastle;
-    blackQueenCastle = board->blackQueenCastle;
-    blackKingCastle = board->blackKingCastle;
-    turn = board->turn;
-}
-
 void Board::setStartingPos() {
 
     // Initialize pieceBoards to the standard starting position
@@ -37,6 +24,15 @@ void Board::setStartingPos() {
     colorBoards[WHITE] = 0x000000000000FFFF;
     colorBoards[BLACK] = 0xFFFF000000000000; // Black pieces
 
+    // Initialize mailbox
+    for (int i = 0; i < 64; ++i) {
+        mailbox[i] = 12; // Initialize mailbox to empty
+        for (int j = 0; j < 12; j++) {
+            if (pieceBoards[j] & (1ULL << i)) mailbox[i] = j;
+        }
+    }
+
+    // Set castling rights
     whiteQueenCastle = true;
     whiteKingCastle = true;
     blackQueenCastle = true;
@@ -82,6 +78,14 @@ void Board::setFenPos(string pos, string turn, string castling, string enPassant
         colorBoards[i % 2] |= pieceBoards[i]; // Update color boards
     }
 
+    // Initialize mailbox
+    for (int i = 0; i < 64; ++i) {
+        mailbox[i] = 12; // Initialize mailbox to empty
+        for (int j = 0; j < 12; j++) {
+            if (pieceBoards[j] & (1ULL << i)) mailbox[i] = j;
+        }
+    }
+
     // Set turn
     if (turn == "w") this->turn = WHITE;
     else this->turn = BLACK;
@@ -115,11 +119,40 @@ void Board::movePiece(uint32_t move) {
             pieceBoards[KING + color] ^= (0x14ULL << (color * 56)); // Move king
             colorBoards[color] ^= (0x9ULL << (color * 56));
             colorBoards[color] ^= (0x14ULL << (color * 56));
+
+            // Update mailbox
+            if (color) {
+                mailbox[56] = 12;
+                mailbox[57] = 12;
+                mailbox[58] = KING + BLACK;
+                mailbox[59] = ROOK + BLACK;
+                mailbox[60] = 12;
+            } else {
+                mailbox[0] = 12;
+                mailbox[1] = 12;
+                mailbox[2] = KING + WHITE;
+                mailbox[3] = ROOK + WHITE;
+                mailbox[4] = 12;
+            }
+
         } else { // Kingside
             pieceBoards[ROOK + color] ^= (0xa0ULL << (color * 56)); // Move rook from h-file
             pieceBoards[KING + color] ^= (0x50ULL << (color * 56)); // Move king
             colorBoards[color] ^= (0xa0ULL << (color * 56));
             colorBoards[color] ^= (0x50ULL << (color * 56));
+
+            // Update mailbox
+            if (color) {
+                mailbox[63] = 12;
+                mailbox[62] = KING + BLACK;
+                mailbox[61] = ROOK + BLACK;
+                mailbox[60] = 12;
+            } else {
+                mailbox[7] = 12;
+                mailbox[6] = KING + WHITE;
+                mailbox[5] = ROOK + WHITE;
+                mailbox[4] = 12;
+            }
         }
         if (color) {
             blackQueenCastle = false;
@@ -151,6 +184,10 @@ void Board::movePiece(uint32_t move) {
         if (pieceBoards[i + color] & (1ULL << from)) {
             pieceBoards[i + color] &= ~(1ULL << from); // Remove piece from old square
             pieceBoards[i + color] |= (1ULL << to); // Place piece on new square
+            
+            // Update mailbox
+            mailbox[from] = 12;
+            mailbox[to] = i + color;
             break;
         }
     }
@@ -165,6 +202,9 @@ void Board::movePiece(uint32_t move) {
     if (Move::isPromotion(move)) {
         pieceBoards[Move::promotionPiece(move)] |= (1ULL << to); // Add promoted piece
         pieceBoards[PAWN + color] &= ~(1ULL << to); // Remove pawn
+
+        // Update mailbox
+        mailbox[to] = Move::promotionPiece(move);
     }
 }
 

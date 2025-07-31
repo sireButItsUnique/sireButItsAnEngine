@@ -2,8 +2,6 @@
 using namespace Search;
 
 namespace Search {
-    vector<vector<int32_t>> history;
-    vector<vector<int32_t>> qhistory;
     int64_t NODE_COUNT;
     TimePoint START_TIME;
     int64_t TIME_LIMIT;
@@ -12,6 +10,7 @@ namespace Search {
 
     // Standard move ordering stuff
     vector<vector<uint32_t>> killer; // Killer moves for each depth
+    vector<int32_t> history; // History table for quiet move ordering
     constexpr int32_t MVV_LVA[7][7] = {
         // PNBRQKX
         {15, 14, 13, 12, 11, 10, 0}, // Taking a pawn
@@ -25,14 +24,13 @@ namespace Search {
 }
 
 void Search::initSearch(int64_t timeLimit) {
-    history = vector<vector<int32_t>>(36, vector<int32_t>(4096 + 5, -90000000)); // Initialize history for move ordering
-    qhistory = vector<vector<int32_t>>(36, vector<int32_t>(4096 + 5, -90000000)); // Initialize qsearch history for move ordering
     START_TIME = chrono::high_resolution_clock::now();
     TIME_LIMIT = timeLimit;
     ABORT_SEARCH = false;
     NODE_COUNT = 0;
 
     killer = vector<vector<uint32_t>>(36, vector<uint32_t>(2, 0)); // Initialize killer moves for each depth
+    history = vector<int32_t>(16384, 0); // Initialize history table for quiet move ordering
 }
 
 // @brief temporary function to evaluate the board until nnue
@@ -52,6 +50,12 @@ int32_t evalBoard(Board& board) {
     score -= _popcnt64(board.pieceBoards[QUEEN + !board.turn]) * 900;
 
     return score;
+}
+
+void Search::updateHistory(uint32_t move, int32_t bonus) {
+    const int MAX_HISTORY = MATE_SCORE;
+	int clamped_bonus = std::clamp(bonus, -MAX_HISTORY, MAX_HISTORY); // Ensure the bonus is within bounds
+	history[Move::id(move)] += clamped_bonus - history[Move::id(move)] * abs(clamped_bonus) / MAX_HISTORY; // Update the history value
 }
 
 int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int depth) {
@@ -83,14 +87,8 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
 
     // Collect capturing moves and sort them by qsearch history
     for (uint32_t move : moves) {
-        if (!Move::isCastle(move) && board.moveIsCapture(move)) {
-            int from = 6;
-            int to = 6;
-            for (int i = 0; i < 12; ++i) {
-                if (board.pieceBoards[i] & (1ULL << Move::from(move))) from = (i >> 1);
-                if (board.pieceBoards[i] & (1ULL << Move::to(move))) to = (i >> 1);
-            }
-            int32_t score = Search::MVV_LVA[from][to];
+        if (board.moveIsCapture(move)) {
+            int32_t score = 20000 + Search::MVV_LVA[board.mailbox[Move::to(move)] >> 1][board.mailbox[Move::from(move)] >> 1];
             captures.push_back({score, move});
         }
     }
@@ -107,7 +105,6 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
 
         // Evaluate the new position
         int32_t score = -Search::finishCaptures(newBoard, -beta, -alpha, depth + 1); // Negate for minimax
-        Search::qhistory[depth][(move & 0x3ffc000) >> 14] = score; // Update qsearch history for move ordering
 
         // Prune if move is too good -> opp has a better move last ply
         if (score >= beta) return score;
@@ -143,22 +140,21 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     scored.reserve(240);
     MoveGen::genMoves(board, moves, board.turn);
     
-    int realDepth = MAX_DEPTH - depth; // Adjust depth for history table
+    int realDepth = MAX_DEPTH - depth; // depth = how many left, realDepth = how many already done (same realDepth = similar board state)
     for (uint32_t move : moves) {
         int32_t score;
 
+        // Capturing Moves Ordering
         if (board.moveIsCapture(move)) {
-            int from = 6;
-            int to = 6;
-            for (int i = 0; i < 12; ++i) {
-                if (board.pieceBoards[i] & (1ULL << Move::from(move))) from = (i >> 1);
-                if (board.pieceBoards[i] & (1ULL << Move::to(move))) to = (i >> 1);
-            }
-            score = 20000 + Search::MVV_LVA[from][to];
-        } else {
+            score = 20000 + Search::MVV_LVA[board.mailbox[Move::to(move)] >> 1][board.mailbox[Move::from(move)] >> 1];
+        } 
+        
+        // Quiet Moves Ordering
+        else {
             score = -10000;
-            if (move == killer[realDepth][0]) score += 1500;
+            if (move == killer[realDepth][0]) score += 1500; // Killer moves
             if (move == killer[realDepth][1]) score += 1000;
+            score += history[Move::id(move)]; // Historical value
         }
          
         scored.push_back({score, move});
@@ -170,8 +166,8 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
 
     // Iterate through all possible moves
     int illegals = 0;
-    for (pair<int32_t, uint32_t>& c: scored) {
-        uint32_t move = c.second;
+    for (int idx = 0; idx < scored.size(); ++idx) {
+        uint32_t move = scored[idx].second;
         Board newBoard = board; // Create a copy of the board
         newBoard.movePiece(move); // Make the move
         if (newBoard.kingIsAttacked(board.turn)) {
@@ -183,7 +179,6 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         int32_t score; // Negative because score is from opponent's perspective
         if (depth > 0) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV); // Negate for minimax
         else score = -Search::finishCaptures(newBoard, -beta, -alpha, 0); // Leaf node evaluation
-        Search::history[realDepth][(move & 0x3ffc000) >> 14] = score; // Update history table for move ordering
 
         // Prune if move is too good -> opp has a better move last ply
         if (score >= beta) {
@@ -193,6 +188,17 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
                 killer[realDepth][1] = killer[realDepth][0];
                 killer[realDepth][0] = move; // Store the killer move
             }
+
+            // Update history
+            if (!board.moveIsCapture(move)) {
+                int32_t bonus = depth * depth; // Usually quadratic is a good choice, because it rewards deeper searches more
+                Search::updateHistory(move, bonus); // Update the history
+                for (int i = 0; i < idx; ++i) {
+                    if (!board.moveIsCapture(scored[i].second)) Search::updateHistory(scored[i].second, -bonus); // Penalize bad quiet moves
+                }
+            }
+
+            // Exit early since we found a move that is too good
             return score;
         }
 

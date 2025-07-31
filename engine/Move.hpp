@@ -120,6 +120,17 @@ namespace Move {
 	}
 
 	/**
+	 * @brief returns the 14 bit functionally unique id of the move
+	 * @attention 16384 possible ids, so only 14 bits are used
+	 */
+	inline uint16_t id(uint32_t& data) {
+		uint16_t id = (data & 0x3ffc000) >> 14; // 12 bits for from & to
+		id |= (Move::color(data) << 13); // 1 bit for color
+		id |= (Move::castleSide(data) << 12); // 1 bit for castle side
+		return id;
+	}
+
+	/**
 	 * @brief returns algebraic move
 	 */
 	inline string toAlgebra(uint32_t& data) {
