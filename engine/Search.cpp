@@ -157,8 +157,8 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
             score = 20000 + Search::MVV_LVA[from][to];
         } else {
             score = -10000;
-            score += 1500 * (move == killer[0][realDepth]);
-            score += 1000 * (move == killer[1][realDepth]);
+            if (move == killer[realDepth][0]) score += 1500;
+            if (move == killer[realDepth][1]) score += 1000;
         }
          
         scored.push_back({score, move});
@@ -189,9 +189,9 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         if (score >= beta) {
 
             // Store killer moves
-            if (!board.moveIsCapture(move) && move != killer[0][realDepth] && move != killer[1][realDepth]) {
-                killer[1][realDepth] = killer[0][realDepth];
-                killer[0][realDepth] = move; // Store the killer move
+            if (!board.moveIsCapture(move) && move != killer[realDepth][0] && move != killer[realDepth][1]) {
+                killer[realDepth][1] = killer[realDepth][0];
+                killer[realDepth][0] = move; // Store the killer move
             }
             return score;
         }
