@@ -9,6 +9,19 @@ namespace Search {
     int64_t TIME_LIMIT;
     int MAX_DEPTH;
     bool ABORT_SEARCH; // Flag to abort search if needed
+
+    // Standard move ordering stuff
+    vector<vector<uint32_t>> killer; // Killer moves for each depth
+    constexpr int32_t MVV_LVA[7][7] = {
+        // PNBRQKX
+        {15, 14, 13, 12, 11, 10, 0}, // Taking a pawn
+        {25, 24, 23, 22, 21, 20, 0}, // Taking a knight
+        {35, 34, 33, 32, 31, 30, 0}, // Taking a bishop
+        {45, 44, 43, 42, 41, 40, 0}, // Taking a rook
+        {55, 54, 53, 52, 51, 50, 0}, // Taking a queen
+        {0, 0, 0, 0, 0, 0, 0}, // Taking a king (should never happen)
+        {0, 0, 0, 0, 0, 0, 0} // No Piece
+    };
 }
 
 void Search::initSearch(int64_t timeLimit) {
@@ -18,6 +31,8 @@ void Search::initSearch(int64_t timeLimit) {
     TIME_LIMIT = timeLimit;
     ABORT_SEARCH = false;
     NODE_COUNT = 0;
+
+    killer = vector<vector<uint32_t>>(36, vector<uint32_t>(2, 0)); // Initialize killer moves for each depth
 }
 
 // @brief temporary function to evaluate the board until nnue
@@ -61,21 +76,29 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
 
     // Generate all possible moves for the current player
     vector<uint32_t> moves;
-    vector<uint32_t> captures;
+    vector<pair<int32_t, uint32_t>> captures;
     moves.reserve(240);
     captures.reserve(240);
     MoveGen::genMoves(board, moves, board.turn);
 
     // Collect capturing moves and sort them by qsearch history
     for (uint32_t move : moves) {
-        if (!Move::isCastle(move) && board.moveIsCapture(move)) captures.push_back(move); // Collect capturing moves
+        if (!Move::isCastle(move) && board.moveIsCapture(move)) {
+            int from = 6;
+            int to = 6;
+            for (int i = 0; i < 12; ++i) {
+                if (board.pieceBoards[i] & (1ULL << Move::from(move))) from = (i >> 1);
+                if (board.pieceBoards[i] & (1ULL << Move::to(move))) to = (i >> 1);
+            }
+            int32_t score = Search::MVV_LVA[from][to];
+            captures.push_back({score, move});
+        }
     }
-    stable_sort(captures.begin(), captures.end(), [depth](uint32_t a, uint32_t b) {
-        return (Search::qhistory[depth][(a & 0x3ffc000) >> 14] > Search::qhistory[depth][(b & 0x3ffc000) >> 14]);
-    });
+    stable_sort(captures.rbegin(), captures.rend());
     
     // Iterate through all capturing moves
-    for (uint32_t move : captures) {
+    for (pair<int32_t, uint32_t>& c: captures) {
+        uint32_t move = c.second;
         Board newBoard = board; // Create a copy of the board
         newBoard.movePiece(move); // Make the move
 
@@ -115,19 +138,40 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     
     // Generate moves and order them
     vector<uint32_t> moves;
+    vector<pair<int32_t, uint32_t>> scored;
     moves.reserve(240);
+    scored.reserve(240);
     MoveGen::genMoves(board, moves, board.turn);
+    
     int realDepth = MAX_DEPTH - depth; // Adjust depth for history table
-    stable_sort(moves.begin(), moves.end(), [realDepth](uint32_t a, uint32_t b) {
-        return Search::history[realDepth][(a & 0x3ffc000) >> 14] > Search::history[realDepth][(b & 0x3ffc000) >> 14];
-    });
+    for (uint32_t move : moves) {
+        int32_t score;
+
+        if (board.moveIsCapture(move)) {
+            int from = 6;
+            int to = 6;
+            for (int i = 0; i < 12; ++i) {
+                if (board.pieceBoards[i] & (1ULL << Move::from(move))) from = (i >> 1);
+                if (board.pieceBoards[i] & (1ULL << Move::to(move))) to = (i >> 1);
+            }
+            score = 20000 + Search::MVV_LVA[from][to];
+        } else {
+            score = -10000;
+            score += 1500 * (move == killer[0][realDepth]);
+            score += 1000 * (move == killer[1][realDepth]);
+        }
+         
+        scored.push_back({score, move});
+    }
+    stable_sort(scored.rbegin(), scored.rend());
 
     // Initialize evaluation score to a very low value
     int32_t eval = -INFINITE_SCORE;
 
     // Iterate through all possible moves
     int illegals = 0;
-    for (uint32_t move : moves) {
+    for (pair<int32_t, uint32_t>& c: scored) {
+        uint32_t move = c.second;
         Board newBoard = board; // Create a copy of the board
         newBoard.movePiece(move); // Make the move
         if (newBoard.kingIsAttacked(board.turn)) {
@@ -142,8 +186,17 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         Search::history[realDepth][(move & 0x3ffc000) >> 14] = score; // Update history table for move ordering
 
         // Prune if move is too good -> opp has a better move last ply
-        if (score >= beta) return score;
-			
+        if (score >= beta) {
+
+            // Store killer moves
+            if (!board.moveIsCapture(move) && move != killer[0][realDepth] && move != killer[1][realDepth]) {
+                killer[1][realDepth] = killer[0][realDepth];
+                killer[0][realDepth] = move; // Store the killer move
+            }
+            return score;
+        }
+
+        // Update evaluation score & update bounds
         if (score > eval) {
             eval = score;
             if (score > alpha) {

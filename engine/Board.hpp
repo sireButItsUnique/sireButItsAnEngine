@@ -66,6 +66,7 @@ public:
 	 * @return true if the move is a capturing move, false otherwise
 	 */
 	inline bool moveIsCapture(uint32_t move) {
+		if (Move::isCastle(move)) return false; // Castling is not a capture
 		return ((1ULL << Move::to(move)) & colorBoards[!Move::color(move)]);
 	}
 
