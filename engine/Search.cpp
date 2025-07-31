@@ -49,6 +49,8 @@ int32_t evalBoard(Board& board) {
     score += _popcnt64(board.pieceBoards[QUEEN + board.turn]) * 900; // Queens
     score -= _popcnt64(board.pieceBoards[QUEEN + !board.turn]) * 900;
 
+	score += (Search::NODE_COUNT & 7) - 3; // trust
+
     return score;
 }
 
