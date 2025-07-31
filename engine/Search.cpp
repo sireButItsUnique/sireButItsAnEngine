@@ -80,7 +80,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
 
     // Generate all possible moves for the current player
     vector<uint32_t> moves;
-    vector<pair<int32_t, uint32_t>> captures;
+    vector<uint32_t> captures;
     moves.reserve(240);
     captures.reserve(240);
     MoveGen::genMoves(board, moves, board.turn);
@@ -88,15 +88,16 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
     // Collect capturing moves and sort them by qsearch history
     for (uint32_t move : moves) {
         if (board.moveIsCapture(move)) {
-            int32_t score = 20000 + Search::MVV_LVA[board.mailbox[Move::to(move)] >> 1][board.mailbox[Move::from(move)] >> 1];
-            captures.push_back({score, move});
+            captures.push_back(move);
         }
     }
-    stable_sort(captures.rbegin(), captures.rend());
+    sort(captures.begin(), captures.end(), [&](uint32_t a, uint32_t b) {
+        return Search::MVV_LVA[board.mailbox[Move::to(a)] >> 1][board.mailbox[Move::from(a)] >> 1] >
+               Search::MVV_LVA[board.mailbox[Move::to(b)] >> 1][board.mailbox[Move::from(b)] >> 1];
+    });
     
     // Iterate through all capturing moves
-    for (pair<int32_t, uint32_t>& c: captures) {
-        uint32_t move = c.second;
+    for (uint32_t move : captures) {
         Board newBoard = board; // Create a copy of the board
         newBoard.movePiece(move); // Make the move
 
@@ -159,7 +160,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
          
         scored.push_back({score, move});
     }
-    stable_sort(scored.rbegin(), scored.rend());
+    sort(scored.rbegin(), scored.rend());
 
     // Initialize evaluation score to a very low value
     int32_t eval = -INFINITE_SCORE;
