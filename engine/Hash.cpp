@@ -7,17 +7,17 @@ namespace Zobrist {
 };
 
 void Zobrist::init() {
-    srand(283818); // ifykyk
+    mt19937_64 rng(283818); // ifykyk
     for (int i = 0; i < 12; ++i) {
         for (int j = 0; j < 64; ++j) {
-            Zobrist::PIECES[i][j] = RAND_64();
+            Zobrist::PIECES[i][j] = rng();
         }
     }
     for (int i = 0; i < 8; ++i) {
-        Zobrist::CASTLING[i] = RAND_64();
+        Zobrist::CASTLING[i] = rng();
     }
     for (int i = 0; i < 2; ++i) {
-        Zobrist::TURN[i] = RAND_64();
+        Zobrist::TURN[i] = rng();
     }
 }
 

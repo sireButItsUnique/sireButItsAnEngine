@@ -146,7 +146,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
                 if (entry->eval <= alpha) return entry->eval; // Worse for sure, we can prune the search
             }
         }
-    }    
+    }
 
     // Generate moves and order them
     vector<uint32_t> moves;
