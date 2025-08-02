@@ -7,7 +7,7 @@ namespace Zobrist {
 };
 
 void Zobrist::init() {
-    srand(287818); // ifykyk
+    srand(283818); // ifykyk
     for (int i = 0; i < 12; ++i) {
         for (int j = 0; j < 64; ++j) {
             Zobrist::PIECES[i][j] = RAND_64();
@@ -28,9 +28,6 @@ namespace TT {
 
 void TT::set(uint64_t key, int32_t eval, int depth, uint64_t move, uint8_t flag) {
     TTEntry *entry = TT::table + (key % TT_SIZE);
-
-    // Don't overwrite a better entry
-    if (entry->depth >= depth) return;
 
     // Write the new entry
     entry->key = key;

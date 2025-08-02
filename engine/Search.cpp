@@ -132,7 +132,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
             return 0;
         }
     }
-    Search::NODE_COUNT++; 
+    Search::NODE_COUNT++;
     
     // Check for transposition table entry (not allowed in root search node)
     if (depth != MAX_DEPTH) {
