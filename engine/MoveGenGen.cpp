@@ -216,8 +216,8 @@ void MoveGen::genPawnMoves(Board& board, vector<uint32_t>& moves, bool color) { 
 
 void MoveGen::genCastlingMoves(Board& board, vector<uint32_t>& moves, bool color) {
 
-    bool canCastleQueen = (color ? board.blackQueenCastle : board.whiteQueenCastle);
-    bool canCastleKing = (color ? board.blackKingCastle : board.whiteKingCastle);
+    bool canCastleQueen = (color ? board.castlingRights[BLACK_QUEENSIDE] : board.castlingRights[WHITE_QUEENSIDE]);
+    bool canCastleKing = (color ? board.castlingRights[BLACK_KINGSIDE] : board.castlingRights[WHITE_KINGSIDE]);
     uint64_t friendlyPieces = board.colorBoards[color];
     uint64_t enemyPieces = board.colorBoards[!color];
 

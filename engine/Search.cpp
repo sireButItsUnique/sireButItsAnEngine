@@ -134,6 +134,19 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     }
     Search::NODE_COUNT++; 
     
+    // Check for transposition table entry
+    TTEntry *entry = TT::get(board.getZobristKey());
+    if (entry && entry->depth >= depth) {
+        
+        // Entry exists and satisfies depth requirement
+        if (entry->flag == TT_EXACT) return entry->eval;
+        else if (entry->flag == TT_LOWER) {
+            if (entry->eval >= beta) return entry->eval; // Will never be played, we can prune the search
+        } else if (entry->flag == TT_UPPER) {
+            if (entry->eval <= alpha) return entry->eval; // Worse for sure, we can prune the search
+        }
+    }
+
     // Generate moves and order them
     vector<uint32_t> moves;
     vector<pair<int32_t, uint32_t>> scored;
@@ -164,6 +177,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
 
     // Initialize evaluation score to a very low value
     int32_t eval = -INFINITE_SCORE;
+    uint64_t bestMove = 0; // Best move for this depth (keep for TT ordering)
 
     // Iterate through all possible moves
     int illegals = 0;
@@ -180,6 +194,9 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         int32_t score; // Negative because score is from opponent's perspective
         if (depth > 0) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV); // Negate for minimax
         else score = -Search::finishCaptures(newBoard, -beta, -alpha, 0); // Leaf node evaluation
+
+        // Time management here so we don't write bs into transposition table (thanks sebastian lague)
+        if (Search::ABORT_SEARCH) return 0;
 
         // Prune if move is too good -> opp has a better move last ply
         if (score >= beta) {
@@ -199,6 +216,9 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
                 }
             }
 
+            // Update transposition table
+            TT::set(board.getZobristKey(), score, depth, move, TT_LOWER); // Store the transposition table entry
+
             // Exit early since we found a move that is too good
             return score;
         }
@@ -206,6 +226,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         // Update evaluation score & update bounds
         if (score > eval) {
             eval = score;
+            bestMove = move;
             if (score > alpha) {
                 alpha = score;
                 PV[depth][0] = move; // Store the best move for this depth
@@ -216,11 +237,17 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         }
     }
 
-    // Return the evaluated score
+    // Adjust score for mate situations
     if (abs(eval) > MATE_SCORE - 100) {
-        if (eval > 0) return eval - 1;
-        else return eval + 1;
+        if (eval > 0) eval--;
+        else eval++;
     }
-    if (illegals == moves.size()) return -MATE_SCORE;
+    if (illegals == moves.size()) eval = -MATE_SCORE;
+
+    // Update transposition table
+    if (eval < alpha) TT::set(board.getZobristKey(), eval, depth, bestMove, TT_UPPER);
+    else TT::set(board.getZobristKey(), eval, depth, bestMove, TT_EXACT);
+
+    // Return full evaluation score
     return eval;
 }

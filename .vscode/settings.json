@@ -9,7 +9,8 @@
         "ostream": "cpp",
         "sstream": "cpp",
         "iomanip": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "algorithm": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }

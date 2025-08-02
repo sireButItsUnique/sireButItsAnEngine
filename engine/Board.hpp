@@ -2,12 +2,13 @@
 #include "includes.hpp"
 #include "helper.hpp"
 #include "Move.hpp"
+#include "Hash.hpp"
 
 class Board {
 public:
 	uint64_t pieceBoards[12], colorBoards[2];
 	int16_t mailbox[64]; // mailbox for piece positions
-	bool whiteQueenCastle, whiteKingCastle, blackQueenCastle, blackKingCastle;
+	bool castlingRights[4]; // castling rights: 0=white king, 1=white queen, 2=black king, 3=black queen
 
 	/**
 	 * @brief who's turn it is to move, white=false; black=true
@@ -63,6 +64,13 @@ public:
 		if (Move::isCastle(move)) return false; // Castling is not a capture
 		return ((1ULL << Move::to(move)) & colorBoards[!Move::color(move)]);
 	}
+
+	/**
+	 * @brief gets the Zobrist key for the current position
+	 *
+	 * @return Zobrist key
+	 */
+	uint64_t getZobristKey();
 
 	/**
 	 * @brief prints the board to stdout

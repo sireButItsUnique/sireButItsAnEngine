@@ -33,10 +33,9 @@ void Board::setStartingPos() {
     }
 
     // Set castling rights
-    whiteQueenCastle = true;
-    whiteKingCastle = true;
-    blackQueenCastle = true;
-    blackKingCastle = true;
+    for (int i = 0; i < 4; ++i) {
+        castlingRights[i] = true;
+    }
 
     turn = WHITE; // White starts
 }
@@ -91,15 +90,15 @@ void Board::setFenPos(string pos, string turn, string castling, string enPassant
     else this->turn = BLACK;
 
     // Set castling rights
-    whiteKingCastle = false;
-    blackKingCastle = false;
-    whiteQueenCastle = false;
-    blackQueenCastle = false;
+    for (int i = 0; i < 4; ++i) {
+        castlingRights[i] = true;
+    }
+
     for (char c : castling) {
-        if (c == 'K') whiteKingCastle = true;
-        else if (c == 'Q') whiteQueenCastle = true;
-        else if (c == 'k') blackKingCastle = true;
-        else if (c == 'q') blackQueenCastle = true;
+        if (c == 'K') castlingRights[0] = true;
+        else if (c == 'Q') castlingRights[1] = true;
+        else if (c == 'k') castlingRights[2] = true;
+        else if (c == 'q') castlingRights[3] = true;
     }
 
     // TODO: En Passant not implemented yet
@@ -155,28 +154,28 @@ void Board::movePiece(uint32_t move) {
             }
         }
         if (color) {
-            blackQueenCastle = false;
-            blackKingCastle = false;
+            castlingRights[BLACK_QUEENSIDE] = false;
+            castlingRights[BLACK_KINGSIDE] = false;
         } else {
-            whiteQueenCastle = false;
-            whiteKingCastle = false;
+            castlingRights[WHITE_QUEENSIDE] = false;
+            castlingRights[WHITE_KINGSIDE] = false;
         }
         // this->print();
         return;
     }
 
     // Castling Shenanigans
-    if (from == 0 || to == 0) whiteQueenCastle = false;
-    if (from == 7 || to == 7) whiteKingCastle = false;
-    if (from == 56 || to == 56) blackQueenCastle = false;
-    if (from == 63 || to == 63) blackKingCastle = false;
+    if (from == 0 || to == 0) castlingRights[WHITE_QUEENSIDE] = false;
+    if (from == 7 || to == 7) castlingRights[WHITE_KINGSIDE] = false;
+    if (from == 56 || to == 56) castlingRights[BLACK_QUEENSIDE] = false;
+    if (from == 63 || to == 63) castlingRights[BLACK_KINGSIDE] = false;
     if (from == 4) {
-        whiteKingCastle = false;
-        whiteQueenCastle = false;
+        castlingRights[WHITE_KINGSIDE] = false;
+        castlingRights[WHITE_QUEENSIDE] = false;
     }
     if (from == 60) {
-        blackKingCastle = false;
-        blackQueenCastle = false;
+        castlingRights[BLACK_KINGSIDE] = false;
+        castlingRights[BLACK_QUEENSIDE] = false;
     }
 
     // Normal move
@@ -206,6 +205,26 @@ void Board::movePiece(uint32_t move) {
         // Update mailbox
         mailbox[to] = Move::promotionPiece(move);
     }
+}
+
+uint64_t Board::getZobristKey() {
+    uint64_t key = 0;
+    for (int i = 0; i < 12; ++i) {
+        if (pieceBoards[i]) {
+            uint64_t board = pieceBoards[i];
+            while (board) {
+                key ^= Zobrist::PIECES[i][_tzcnt_u64(board)];
+                board &= (board - 1); 
+            }
+        }
+    }
+    
+    key ^= Zobrist::TURN[turn];
+    key ^= Zobrist::CASTLING[WHITE_KINGSIDE + (4 * castlingRights[WHITE_KINGSIDE])];
+    key ^= Zobrist::CASTLING[WHITE_QUEENSIDE + (4 * castlingRights[WHITE_QUEENSIDE])];
+    key ^= Zobrist::CASTLING[BLACK_KINGSIDE + (4 * castlingRights[BLACK_KINGSIDE])];
+    key ^= Zobrist::CASTLING[BLACK_QUEENSIDE + (4 * castlingRights[BLACK_QUEENSIDE])];
+    return key;
 }
 
 void Board::print() {
