@@ -134,18 +134,19 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     }
     Search::NODE_COUNT++; 
     
-    // Check for transposition table entry
-    TTEntry *entry = TT::get(board.getZobristKey());
-    if (entry && entry->depth >= depth) {
-        
-        // Entry exists and satisfies depth requirement
-        if (entry->flag == TT_EXACT) return entry->eval;
-        else if (entry->flag == TT_LOWER) {
-            if (entry->eval >= beta) return entry->eval; // Will never be played, we can prune the search
-        } else if (entry->flag == TT_UPPER) {
-            if (entry->eval <= alpha) return entry->eval; // Worse for sure, we can prune the search
+    // Check for transposition table entry (not allowed in root search node)
+    if (depth != MAX_DEPTH) {
+        TTEntry *entry = TT::get(board.getZobristKey());
+        if (entry && entry->depth >= depth) {
+            // Entry exists and satisfies depth requirement
+            if (entry->flag == TT_EXACT) return entry->eval;
+            else if (entry->flag == TT_LOWER) {
+                if (entry->eval >= beta) return entry->eval; // Will never be played, we can prune the search
+            } else if (entry->flag == TT_UPPER) {
+                if (entry->eval <= alpha) return entry->eval; // Worse for sure, we can prune the search
+            }
         }
-    }
+    }    
 
     // Generate moves and order them
     vector<uint32_t> moves;

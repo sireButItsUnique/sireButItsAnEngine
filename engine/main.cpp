@@ -175,11 +175,11 @@ int main(int argc, char *argv[]) {
                     cout << " nodes " << Search::NODE_COUNT;
                     cout << " time " << chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start).count();
                     cout << " nps " << int64_t(Search::NODE_COUNT / time_taken);
-                    cout << " pv ";
-                    for (int i = 0; i < 64; ++i) {
-                        if (!moveHistory[depth][i]) break;
-                        cout << Move::toAlgebra(moveHistory[depth][i]) << " ";
-                    }
+                    cout << " pv " << Move::toAlgebra(moveHistory[depth][0]); // pv broken for now bc tt exits
+                    // for (int i = 0; i < 64; ++i) {
+                    //     if (!moveHistory[depth][i]) break;
+                    //     cout << Move::toAlgebra(moveHistory[depth][i]) << " ";
+                    // }
                     cout << endl;
                 }
                 depth--;
