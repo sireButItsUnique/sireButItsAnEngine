@@ -248,6 +248,6 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     if (eval < alpha) TT::set(board.getZobristKey(), eval, depth, bestMove, TT_UPPER);
     else TT::set(board.getZobristKey(), eval, depth, bestMove, TT_EXACT);
 
-    // Return full evaluation score
+    // Return fully evaluated score
     return eval;
 }
