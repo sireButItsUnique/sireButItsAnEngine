@@ -156,6 +156,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     MoveGen::genMoves(board, moves, board.turn);
     
     int realDepth = MAX_DEPTH - depth; // depth = how many left, realDepth = how many already done (same realDepth = similar board state)
+    bool beatAlpha = false; // Flag to check if we beat alpha in this node
     for (uint32_t move : moves) {
         int32_t score;
 
@@ -229,6 +230,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
             eval = score;
             bestMove = move;
             if (score > alpha) {
+                beatAlpha = true;
                 alpha = score;
                 PV[depth][0] = move; // Store the best move for this depth
                 if (depth > 0) {
@@ -244,5 +246,10 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         else return eval + 1;
     }
     if (illegals == moves.size()) return -MATE_SCORE;
+
+    // Update transposition table
+    if (!beatAlpha) TT::set(board.getZobristKey(), eval, depth, bestMove, TT_UPPER);
+    else TT::set(board.getZobristKey(), eval, depth, bestMove, TT_EXACT);
+
     return eval;
 }
