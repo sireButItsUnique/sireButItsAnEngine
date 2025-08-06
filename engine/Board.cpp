@@ -91,7 +91,7 @@ void Board::setFenPos(string pos, string turn, string castling, string enPassant
 
     // Set castling rights
     for (int i = 0; i < 4; ++i) {
-        castlingRights[i] = true;
+        castlingRights[i] = false;
     }
 
     for (char c : castling) {
