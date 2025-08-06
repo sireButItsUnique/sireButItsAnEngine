@@ -247,7 +247,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     }
     if (illegals == moves.size()) return -MATE_SCORE;
 
-    // Update transposition table
+    // Update transposition table.
     if (!beatAlpha) TT::set(board.getZobristKey(), eval, depth, bestMove, TT_UPPER);
     else TT::set(board.getZobristKey(), eval, depth, bestMove, TT_EXACT);
 
