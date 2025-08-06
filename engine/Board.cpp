@@ -247,4 +247,5 @@ void Board::print() {
     }
     cout << "  a   b   c   d   e   f   g   h" << endl;
     cout << "Turn: " << (turn ? "Black" : "White") << endl;
+    cout << "Key: " << hex << getZobristKey() << dec << endl;
 }
