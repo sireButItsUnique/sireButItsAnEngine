@@ -136,7 +136,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     
     // Check for transposition table entry (not allowed in root search node)
     uint32_t hashMove = 0;
-    TTEntry *entry = TT::get(board.getZobristKey());
+    TTEntry *entry = TT::get(board.key);
     if (depth != MAX_DEPTH) {
         if (entry && entry->depth >= depth) {
             // Entry exists and satisfies depth requirement
@@ -227,7 +227,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
             }
 
             // Update transposition table
-            TT::set(board.getZobristKey(), score, depth, move, TT_LOWER); // Store the transposition table entry
+            TT::set(board.key, score, depth, move, TT_LOWER); // Store the transposition table entry
 
             // Exit early since we found a move that is too good
             return score;
@@ -251,22 +251,22 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     // Return the evaluated score
     if (abs(eval) > MATE_SCORE - 100) {
         if (eval > 0) {
-            TT::set(board.getZobristKey(), eval - 1, depth, bestMove, TT_EXACT);
+            TT::set(board.key, eval - 1, depth, bestMove, TT_EXACT);
             return eval - 1;
         }
         else {
-            TT::set(board.getZobristKey(), eval + 1, depth, bestMove, TT_EXACT);
+            TT::set(board.key, eval + 1, depth, bestMove, TT_EXACT);
             return eval + 1;
         }
     }
     if (illegals == moves.size()) {
-        TT::set(board.getZobristKey(), -MATE_SCORE, depth, bestMove, TT_EXACT);
+        TT::set(board.key, -MATE_SCORE, depth, bestMove, TT_EXACT);
         return -MATE_SCORE;
     }
 
     // Update transposition table.
-    if (!beatAlpha) TT::set(board.getZobristKey(), eval, depth, bestMove, TT_UPPER);
-    else TT::set(board.getZobristKey(), eval, depth, bestMove, TT_EXACT);
+    if (!beatAlpha) TT::set(board.key, eval, depth, bestMove, TT_UPPER);
+    else TT::set(board.key, eval, depth, bestMove, TT_EXACT);
 
     return eval;
 }

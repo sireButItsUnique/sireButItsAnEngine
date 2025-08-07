@@ -38,6 +38,9 @@ void Board::setStartingPos() {
     }
 
     turn = WHITE; // White starts
+
+    // Gen zobrist key
+    this->key = this->getZobristKey();
 }
 
 void Board::setFenPos(string pos, string turn, string castling, string enPassant) {
@@ -101,6 +104,9 @@ void Board::setFenPos(string pos, string turn, string castling, string enPassant
         else if (c == 'q') castlingRights[3] = true;
     }
 
+    // Gen zobrist key
+    this->key = this->getZobristKey();
+
     // TODO: En Passant not implemented yet
 }
 
@@ -111,6 +117,10 @@ void Board::movePiece(uint32_t move) {
     uint8_t from = Move::from(move);
     uint8_t to = Move::to(move);
 
+    // Update zobrist key
+    key ^= Zobrist::TURN[!color];
+    key ^= Zobrist::TURN[color];
+
     // Handle castling
     if (Move::isCastle(move)) {
         if (Move::castleSide(move) == QUEENSIDE) {
@@ -119,19 +129,41 @@ void Board::movePiece(uint32_t move) {
             colorBoards[color] ^= (0x9ULL << (color * 56));
             colorBoards[color] ^= (0x14ULL << (color * 56));
 
-            // Update mailbox
+            // Update mailbox & zobrist key
             if (color) {
                 mailbox[56] = 12;
                 mailbox[57] = 12;
                 mailbox[58] = KING + BLACK;
                 mailbox[59] = ROOK + BLACK;
                 mailbox[60] = 12;
+                key ^= Zobrist::PIECES[ROOK + BLACK][56];
+                key ^= Zobrist::PIECES[ROOK + BLACK][59];
+                key ^= Zobrist::PIECES[KING + BLACK][60];
+                key ^= Zobrist::PIECES[KING + BLACK][58];
+
+                key ^= Zobrist::CASTLING[BLACK_QUEENSIDE + 4];
+                key ^= Zobrist::CASTLING[BLACK_QUEENSIDE];
+                if (castlingRights[BLACK_KINGSIDE]) {
+                    key ^= Zobrist::CASTLING[BLACK_KINGSIDE + 4];
+                    key ^= Zobrist::CASTLING[BLACK_KINGSIDE];
+                }
             } else {
                 mailbox[0] = 12;
                 mailbox[1] = 12;
                 mailbox[2] = KING + WHITE;
                 mailbox[3] = ROOK + WHITE;
                 mailbox[4] = 12;
+                key ^= Zobrist::PIECES[ROOK + WHITE][0];
+                key ^= Zobrist::PIECES[ROOK + WHITE][3];
+                key ^= Zobrist::PIECES[KING + WHITE][4];
+                key ^= Zobrist::PIECES[KING + WHITE][2];
+
+                key ^= Zobrist::CASTLING[WHITE_QUEENSIDE + 4];
+                key ^= Zobrist::CASTLING[WHITE_QUEENSIDE];
+                if (castlingRights[WHITE_KINGSIDE]) {
+                    key ^= Zobrist::CASTLING[WHITE_KINGSIDE + 4];
+                    key ^= Zobrist::CASTLING[WHITE_KINGSIDE];
+                }
             }
 
         } else { // Kingside
@@ -140,17 +172,39 @@ void Board::movePiece(uint32_t move) {
             colorBoards[color] ^= (0xa0ULL << (color * 56));
             colorBoards[color] ^= (0x50ULL << (color * 56));
 
-            // Update mailbox
+            // Update mailbox & zobrist key
             if (color) {
                 mailbox[63] = 12;
                 mailbox[62] = KING + BLACK;
                 mailbox[61] = ROOK + BLACK;
                 mailbox[60] = 12;
+                key ^= Zobrist::PIECES[ROOK + BLACK][63];
+                key ^= Zobrist::PIECES[ROOK + BLACK][61];
+                key ^= Zobrist::PIECES[KING + BLACK][60];
+                key ^= Zobrist::PIECES[KING + BLACK][62];
+
+                key ^= Zobrist::CASTLING[BLACK_KINGSIDE + 4];
+                key ^= Zobrist::CASTLING[BLACK_KINGSIDE];
+                if (castlingRights[BLACK_QUEENSIDE]) {
+                    key ^= Zobrist::CASTLING[BLACK_QUEENSIDE + 4];
+                    key ^= Zobrist::CASTLING[BLACK_QUEENSIDE];
+                }
             } else {
                 mailbox[7] = 12;
                 mailbox[6] = KING + WHITE;
                 mailbox[5] = ROOK + WHITE;
                 mailbox[4] = 12;
+                key ^= Zobrist::PIECES[ROOK + WHITE][7];
+                key ^= Zobrist::PIECES[ROOK + WHITE][5];
+                key ^= Zobrist::PIECES[KING + WHITE][4];
+                key ^= Zobrist::PIECES[KING + WHITE][6];
+
+                key ^= Zobrist::CASTLING[WHITE_KINGSIDE + 4];
+                key ^= Zobrist::CASTLING[WHITE_KINGSIDE];
+                if (castlingRights[WHITE_QUEENSIDE]) {
+                    key ^= Zobrist::CASTLING[WHITE_QUEENSIDE + 4];
+                    key ^= Zobrist::CASTLING[WHITE_QUEENSIDE];
+                }
             }
         }
         if (color) {
@@ -160,20 +214,59 @@ void Board::movePiece(uint32_t move) {
             castlingRights[WHITE_QUEENSIDE] = false;
             castlingRights[WHITE_KINGSIDE] = false;
         }
-        // this->print();
         return;
     }
 
     // Castling Shenanigans
-    if (from == 0 || to == 0) castlingRights[WHITE_QUEENSIDE] = false;
-    if (from == 7 || to == 7) castlingRights[WHITE_KINGSIDE] = false;
-    if (from == 56 || to == 56) castlingRights[BLACK_QUEENSIDE] = false;
-    if (from == 63 || to == 63) castlingRights[BLACK_KINGSIDE] = false;
+    if (from == 0 || to == 0) {
+        if (castlingRights[WHITE_QUEENSIDE]) {
+            key ^= Zobrist::CASTLING[WHITE_QUEENSIDE + 4];
+            key ^= Zobrist::CASTLING[WHITE_QUEENSIDE];
+        }
+        castlingRights[WHITE_QUEENSIDE] = false;
+    }
+    if (from == 7 || to == 7) {
+        if (castlingRights[WHITE_KINGSIDE]) {
+            key ^= Zobrist::CASTLING[WHITE_KINGSIDE + 4];
+            key ^= Zobrist::CASTLING[WHITE_KINGSIDE];
+        }
+        castlingRights[WHITE_KINGSIDE] = false;
+    }
+    if (from == 56 || to == 56) {
+        if (castlingRights[BLACK_QUEENSIDE]) {
+            key ^= Zobrist::CASTLING[BLACK_QUEENSIDE + 4];
+            key ^= Zobrist::CASTLING[BLACK_QUEENSIDE];
+        }
+        castlingRights[BLACK_QUEENSIDE] = false;
+    }
+    if (from == 63 || to == 63) {
+        if (castlingRights[BLACK_KINGSIDE]) {
+            key ^= Zobrist::CASTLING[BLACK_KINGSIDE + 4];
+            key ^= Zobrist::CASTLING[BLACK_KINGSIDE];
+        }
+        castlingRights[BLACK_KINGSIDE] = false;
+    }
     if (from == 4) {
+        if (castlingRights[WHITE_QUEENSIDE]) {
+            key ^= Zobrist::CASTLING[WHITE_QUEENSIDE + 4];
+            key ^= Zobrist::CASTLING[WHITE_QUEENSIDE];
+        }
+        if (castlingRights[WHITE_KINGSIDE]) {
+            key ^= Zobrist::CASTLING[WHITE_KINGSIDE + 4];
+            key ^= Zobrist::CASTLING[WHITE_KINGSIDE];
+        }
         castlingRights[WHITE_KINGSIDE] = false;
         castlingRights[WHITE_QUEENSIDE] = false;
     }
     if (from == 60) {
+        if (castlingRights[BLACK_QUEENSIDE]) {
+            key ^= Zobrist::CASTLING[BLACK_QUEENSIDE + 4];
+            key ^= Zobrist::CASTLING[BLACK_QUEENSIDE];
+        }
+        if (castlingRights[BLACK_KINGSIDE]) {
+            key ^= Zobrist::CASTLING[BLACK_KINGSIDE + 4];
+            key ^= Zobrist::CASTLING[BLACK_KINGSIDE];
+        }
         castlingRights[BLACK_KINGSIDE] = false;
         castlingRights[BLACK_QUEENSIDE] = false;
     }
@@ -187,11 +280,18 @@ void Board::movePiece(uint32_t move) {
             // Update mailbox
             mailbox[from] = 12;
             mailbox[to] = i + color;
+
+            // Update zobrist key
+            key ^= Zobrist::PIECES[i + color][from];
+            key ^= Zobrist::PIECES[i + color][to];
             break;
         }
     }
     for (int i = 0; i < 12; i += 2) {
-        pieceBoards[i + !color] &= ~(1ULL << to); // Remove enemy piece on new square
+        if (pieceBoards[i + !color] & (1ULL << to)) {
+            pieceBoards[i + !color] &= ~(1ULL << to); // Remove enemy piece on new square
+            key ^= Zobrist::PIECES[i + !color][to];
+        }
     }
     colorBoards[color] &= ~(1ULL << from); // Remove piece from old square
     colorBoards[color] |= (1ULL << to); // Place piece on new square
@@ -204,6 +304,10 @@ void Board::movePiece(uint32_t move) {
 
         // Update mailbox
         mailbox[to] = Move::promotionPiece(move);
+
+        // Update zobrist key
+        key ^= Zobrist::PIECES[PAWN + color][to];
+        key ^= Zobrist::PIECES[Move::promotionPiece(move)][to];
     }
 }
 
@@ -225,6 +329,14 @@ uint64_t Board::getZobristKey() {
     key ^= Zobrist::CASTLING[BLACK_KINGSIDE + (4 * castlingRights[BLACK_KINGSIDE])];
     key ^= Zobrist::CASTLING[BLACK_QUEENSIDE + (4 * castlingRights[BLACK_QUEENSIDE])];
     return key;
+}
+
+uint64_t Board::checkKey() {
+    uint64_t computedKey = this->getZobristKey();
+    if (computedKey != this->key) {
+        cerr << "Computed: " << hex << computedKey << " Stored: " << this->key << dec << endl;
+    }
+    return computedKey;
 }
 
 void Board::print() {
