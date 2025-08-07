@@ -135,8 +135,9 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     Search::NODE_COUNT++;
     
     // Check for transposition table entry (not allowed in root search node)
+    uint32_t hashMove = 0;
+    TTEntry *entry = TT::get(board.getZobristKey());
     if (depth != MAX_DEPTH) {
-        TTEntry *entry = TT::get(board.getZobristKey());
         if (entry && entry->depth >= depth) {
             // Entry exists and satisfies depth requirement
             if (entry->flag == TT_EXACT) return entry->eval;
@@ -145,6 +146,8 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
             } else if (entry->flag == TT_UPPER) {
                 if (entry->eval <= alpha) return entry->eval; // Worse for sure, we can prune the search
             }
+
+            hashMove = entry->move; // Get the best move from the transposition table
         }
     }
 
@@ -160,8 +163,13 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     for (uint32_t move : moves) {
         int32_t score;
 
+        // Transposition table move ordering
+        if (move == hashMove) {
+            score = INFINITE_SCORE; // Highest score for the hash move
+        }
+
         // Capturing Moves Ordering
-        if (board.moveIsCapture(move)) {
+        else if (board.moveIsCapture(move)) {
             score = 20000 + Search::MVV_LVA[board.mailbox[Move::to(move)] >> 1][board.mailbox[Move::from(move)] >> 1];
         } 
         

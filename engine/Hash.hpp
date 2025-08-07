@@ -45,7 +45,7 @@ struct TTEntry {
 
 namespace TT {
     extern const int TT_SIZE;
-    extern TTEntry table[1 << 20];
+    extern TTEntry table[1 << 22];
 
     /**
      * @brief Sets a transposition table entry.

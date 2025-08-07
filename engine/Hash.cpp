@@ -22,19 +22,21 @@ void Zobrist::init() {
 }
 
 namespace TT {
-    const int TT_SIZE = 1 << 20;
-    TTEntry table[TT_SIZE]; // 1M entries
+    const int TT_SIZE = 1 << 22; // 4M entries
+    TTEntry table[TT_SIZE]; // 4M entries
 }
 
 void TT::set(uint64_t key, int32_t eval, int depth, uint64_t move, uint8_t flag) {
     TTEntry *entry = TT::table + (key % TT_SIZE);
 
     // Write the new entry
-    entry->key = key;
-    entry->eval = eval;
-    entry->depth = depth;
-    entry->move = move;
-    entry->flag = flag;
+    if (depth >= entry->depth || entry->key != key) {
+        entry->key = key;
+        entry->eval = eval;
+        entry->depth = depth;
+        entry->move = move;
+        entry->flag = flag;
+    }
 }
 
 TTEntry* TT::get(uint64_t key) {
