@@ -242,10 +242,19 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
 
     // Return the evaluated score
     if (abs(eval) > MATE_SCORE - 100) {
-        if (eval > 0) return eval - 1;
-        else return eval + 1;
+        if (eval > 0) {
+            TT::set(board.getZobristKey(), eval - 1, depth, bestMove, TT_EXACT);
+            return eval - 1;
+        }
+        else {
+            TT::set(board.getZobristKey(), eval + 1, depth, bestMove, TT_EXACT);
+            return eval + 1;
+        }
     }
-    if (illegals == moves.size()) return -MATE_SCORE;
+    if (illegals == moves.size()) {
+        TT::set(board.getZobristKey(), -MATE_SCORE, depth, bestMove, TT_EXACT);
+        return -MATE_SCORE;
+    }
 
     // Update transposition table.
     if (!beatAlpha) TT::set(board.getZobristKey(), eval, depth, bestMove, TT_UPPER);
