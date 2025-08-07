@@ -25,25 +25,3 @@ namespace TT {
     const int TT_SIZE = 1 << 22; // 4M entries
     TTEntry table[TT_SIZE]; // 4M entries
 }
-
-void TT::set(uint64_t key, int32_t eval, int depth, uint64_t move, uint8_t flag) {
-    TTEntry *entry = TT::table + (key % TT_SIZE);
-
-    // Write the new entry
-    if (depth >= entry->depth || entry->key != key) {
-        entry->key = key;
-        entry->eval = eval;
-        entry->depth = depth;
-        entry->move = move;
-        entry->flag = flag;
-    }
-}
-
-TTEntry* TT::get(uint64_t key) {
-    TTEntry *entry = TT::table + (key % TT_SIZE);
-    
-    // Check if the entry is valid
-    if (entry->key == key) return entry;
-    
-    return nullptr; // No valid entry found
-}

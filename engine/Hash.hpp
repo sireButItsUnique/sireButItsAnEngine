@@ -55,12 +55,32 @@ namespace TT {
      * @param move The best move associated with this entry.
      * @param flag The flag associated with this entry.
      */
-    void set(uint64_t key, int32_t eval, int depth, uint64_t move, uint8_t flag);
+    inline void set(uint64_t key, int32_t eval, int depth, uint64_t move, uint8_t flag) {
+        TTEntry *entry = TT::table + (key % TT_SIZE);
+
+        // Write the new entry
+        if (depth >= entry->depth || entry->key != key) {
+            entry->key = key;
+            entry->eval = eval;
+            entry->depth = depth;
+            entry->move = move;
+            entry->flag = flag;
+        }
+    }
+
+
 
     /**
      * @brief Gets a transposition table entry.
      * @param key The Zobrist key for the position.
      * @return A pointer to the TTEntry if found, otherwise nullptr.
      */
-    TTEntry* get(uint64_t key);
+    inline TTEntry* get(uint64_t key) {
+        TTEntry *entry = TT::table + (key % TT_SIZE);
+        
+        // Check if the entry is valid
+        if (entry->key == key) return entry;
+        
+        return nullptr; // No valid entry found
+    }
 }
