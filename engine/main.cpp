@@ -15,10 +15,12 @@ int main(int argc, char *argv[]) {
         board.setStartingPos();
         vector<vector<uint32_t>> moveHistory(64, vector<uint32_t>(64, 0));
         Search::initSearch(INFINITE_SCORE);
-        Search::MAX_DEPTH = 5;
         auto start = chrono::high_resolution_clock::now();
-        
-        Search::bestMoves(board, 5, -INFINITE_SCORE, INFINITE_SCORE, moveHistory);
+
+        for (int depth = 1; depth <= 8; ++depth) {
+            Search::MAX_DEPTH = depth;
+            Search::bestMoves(board, depth, -INFINITE_SCORE, INFINITE_SCORE, moveHistory);
+        }
 
         // outputing the results
         auto end = chrono::high_resolution_clock::now();
