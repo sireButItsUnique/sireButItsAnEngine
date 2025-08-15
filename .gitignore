@@ -5,3 +5,5 @@ bongcloud
 /build
 /lichess/node_modules/
 *.env
+sireButItsAnEngine
+*.exe

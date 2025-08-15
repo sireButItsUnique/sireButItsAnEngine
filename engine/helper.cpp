@@ -8,6 +8,13 @@ void SPLIT_STRING(string s, vector<string>& tokens) {
     if (pos < s.size()) tokens.push_back(s.substr(pos));
 }
 
+uint64_t RAND_64() {
+    uint64_t res = rand();
+    res <<= 32;
+    res |= rand();
+    return res;
+}
+
 int TO_SQUARE(int col, int row) {
     return 8 * (row - '1') + (col - 'a');
 }

@@ -4,11 +4,13 @@
 #include "Move.hpp"
 #include "MoveGen.hpp"
 #include "Search.hpp"
+#include "Hash.hpp"
 
 string cmd;
 Board board;
 int main(int argc, char *argv[]) {
     MoveGen::init(); // Initialize ray attacks and lookup tables
+    Zobrist::init(); // Initialize Zobrist hashing tables
 
     // Run benchmark
     if (argc == 2 && std::string(argv[1]) == "bench") {
@@ -58,13 +60,13 @@ int main(int argc, char *argv[]) {
                     uint32_t move = 0;
                     Move::setColor(move, board.turn);
 
-                    if (tokens[i] == "e1g1" && board.whiteKingCastle) {
+                    if (tokens[i] == "e1g1" && board.castlingRights[WHITE_KINGSIDE]) {
                         Move::setCastle(move, false);
-                    } else if (tokens[i] == "e1c1" && board.whiteQueenCastle) {
+                    } else if (tokens[i] == "e1c1" && board.castlingRights[WHITE_QUEENSIDE]) {
                         Move::setCastle(move, true);
-                    } else if (tokens[i] == "e8g8" && board.blackKingCastle) {
+                    } else if (tokens[i] == "e8g8" && board.castlingRights[BLACK_KINGSIDE]) {
                         Move::setCastle(move, false);
-                    } else if (tokens[i] == "e8c8" && board.blackQueenCastle) {
+                    } else if (tokens[i] == "e8c8" && board.castlingRights[BLACK_QUEENSIDE]) {
                         Move::setCastle(move, true);
                     } else {
                         int from = TO_SQUARE(tokens[i][0], tokens[i][1]);
@@ -89,13 +91,13 @@ int main(int argc, char *argv[]) {
                     uint32_t move = 0;
                     Move::setColor(move, board.turn);
 
-                    if (tokens[i] == "e1g1" && board.whiteKingCastle) {
+                    if (tokens[i] == "e1g1" && board.castlingRights[WHITE_KINGSIDE]) {
                         Move::setCastle(move, false);
-                    } else if (tokens[i] == "e1c1" && board.whiteQueenCastle) {
+                    } else if (tokens[i] == "e1c1" && board.castlingRights[WHITE_QUEENSIDE]) {
                         Move::setCastle(move, true);
-                    } else if (tokens[i] == "e8g8" && board.blackKingCastle) {
+                    } else if (tokens[i] == "e8g8" && board.castlingRights[BLACK_KINGSIDE]) {
                         Move::setCastle(move, false);
-                    } else if (tokens[i] == "e8c8" && board.blackQueenCastle) {
+                    } else if (tokens[i] == "e8c8" && board.castlingRights[BLACK_QUEENSIDE]) {
                         Move::setCastle(move, true);
                     } else {
                         int from = TO_SQUARE(tokens[i][0], tokens[i][1]);
@@ -175,11 +177,11 @@ int main(int argc, char *argv[]) {
                     cout << " nodes " << Search::NODE_COUNT;
                     cout << " time " << chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start).count();
                     cout << " nps " << int64_t(Search::NODE_COUNT / time_taken);
-                    cout << " pv ";
-                    for (int i = 0; i < 64; ++i) {
-                        if (!moveHistory[depth][i]) break;
-                        cout << Move::toAlgebra(moveHistory[depth][i]) << " ";
-                    }
+                    cout << " pv " << Move::toAlgebra(moveHistory[depth][0]); // pv broken for now bc tt exits
+                    // for (int i = 0; i < 64; ++i) {
+                    //     if (!moveHistory[depth][i]) break;
+                    //     cout << Move::toAlgebra(moveHistory[depth][i]) << " ";
+                    // }
                     cout << endl;
                 }
                 depth--;

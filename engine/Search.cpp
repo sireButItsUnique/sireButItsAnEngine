@@ -132,8 +132,25 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
             return 0;
         }
     }
-    Search::NODE_COUNT++; 
+    Search::NODE_COUNT++;
     
+    // Check for transposition table entry (not allowed in root search node)
+    uint32_t hashMove = 0;
+    TTEntry *entry = TT::get(board.key);
+    if (depth != MAX_DEPTH) {
+        if (entry && entry->depth >= depth) {
+            // Entry exists and satisfies depth requirement
+            if (entry->flag == TT_EXACT) return entry->eval;
+            else if (entry->flag == TT_LOWER) {
+                if (entry->eval >= beta) return entry->eval; // Will never be played, we can prune the search
+            } else if (entry->flag == TT_UPPER) {
+                if (entry->eval <= alpha) return entry->eval; // Worse for sure, we can prune the search
+            }
+
+            hashMove = entry->move; // Get the best move from the transposition table
+        }
+    }
+
     // Generate moves and order them
     vector<uint32_t> moves;
     vector<pair<int32_t, uint32_t>> scored;
@@ -142,11 +159,17 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     MoveGen::genMoves(board, moves, board.turn);
     
     int realDepth = MAX_DEPTH - depth; // depth = how many left, realDepth = how many already done (same realDepth = similar board state)
+    bool beatAlpha = false; // Flag to check if we beat alpha in this node
     for (uint32_t move : moves) {
         int32_t score;
 
+        // Transposition table move ordering
+        if (move == hashMove) {
+            score = INFINITE_SCORE; // Highest score for the hash move
+        }
+
         // Capturing Moves Ordering
-        if (board.moveIsCapture(move)) {
+        else if (board.moveIsCapture(move)) {
             score = 20000 + Search::MVV_LVA[board.mailbox[Move::to(move)] >> 1][board.mailbox[Move::from(move)] >> 1];
         } 
         
@@ -164,6 +187,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
 
     // Initialize evaluation score to a very low value
     int32_t eval = -INFINITE_SCORE;
+    uint64_t bestMove = 0; // Best move for this depth (keep for TT ordering)
 
     // Iterate through all possible moves
     int illegals = 0;
@@ -180,6 +204,9 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         int32_t score; // Negative because score is from opponent's perspective
         if (depth > 0) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV); // Negate for minimax
         else score = -Search::finishCaptures(newBoard, -beta, -alpha, 0); // Leaf node evaluation
+
+        // Time management here so we don't write bs into transposition table (thanks sebastian lague)
+        if (Search::ABORT_SEARCH) return 0;
 
         // Prune if move is too good -> opp has a better move last ply
         if (score >= beta) {
@@ -199,6 +226,9 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
                 }
             }
 
+            // Update transposition table
+            TT::set(board.key, score, depth, move, TT_LOWER); // Store the transposition table entry
+
             // Exit early since we found a move that is too good
             return score;
         }
@@ -206,21 +236,27 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         // Update evaluation score & update bounds
         if (score > eval) {
             eval = score;
+            bestMove = move;
             if (score > alpha) {
+                beatAlpha = true;
                 alpha = score;
                 PV[depth][0] = move; // Store the best move for this depth
-                if (depth > 0) {
-                    for (int i = 0; i + 1 < 64; ++i) PV[depth][i + 1] = PV[depth - 1][i];
-                }
             }
         }
     }
 
-    // Return the evaluated score
-    if (abs(eval) > MATE_SCORE - 100) {
-        if (eval > 0) return eval - 1;
-        else return eval + 1;
+    // Adjust for mate scores & update transposition table
+    if (illegals == moves.size()) {
+        eval = -MATE_SCORE;
     }
-    if (illegals == moves.size()) return -MATE_SCORE;
+    else if (abs(eval) > MATE_SCORE - 100) {
+        if (eval > 0) eval--;
+        else eval++;
+    }
+
+    // Update transposition table.
+    if (!beatAlpha) TT::set(board.key, eval, depth, bestMove, TT_UPPER);
+    else TT::set(board.key, eval, depth, bestMove, TT_EXACT);
+
     return eval;
 }
