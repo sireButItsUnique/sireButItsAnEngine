@@ -10,8 +10,7 @@ public:
 	int16_t mailbox[64]; // mailbox for piece positions
 	uint64_t key; // zobrist key for the position
 	bool castlingRights[4]; // castling rights: 0=white king, 1=white queen, 2=black king, 3=black queen
-	bool threeFold = false; // true if the position has been repeated 3 times
-	map<uint64_t, int> threeFoldReps; // stores how many times a position (represented by zobrist key) has been repeated
+	vector<uint64_t> threeFoldReps; // stores how many times a position (represented by zobrist key) has been repeated
 
 	/**
 	 * @brief who's turn it is to move, white=false; black=true
@@ -68,6 +67,22 @@ public:
 		return ((1ULL << Move::to(move)) & colorBoards[!Move::color(move)]);
 	}
 
+	/**
+	 * @brief checks if the position is a threefold repetition
+	 *
+	 * @return true if the position is a threefold repetition, false otherwise
+	 */
+	inline bool threeFold() {
+		int cnt = 0;
+		for (uint64_t rep: threeFoldReps) {
+			if (rep == key) {
+				cnt++;
+				if (cnt >= 3) return true;
+			}
+		}
+		return false;
+	}
+	
 	/**
 	 * @brief gets the Zobrist key for the current position
 	 *
