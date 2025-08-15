@@ -241,27 +241,17 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
                 beatAlpha = true;
                 alpha = score;
                 PV[depth][0] = move; // Store the best move for this depth
-                if (depth > 0) {
-                    for (int i = 0; i + 1 < 64; ++i) PV[depth][i + 1] = PV[depth - 1][i];
-                }
             }
         }
     }
 
-    // Return the evaluated score
-    if (abs(eval) > MATE_SCORE - 100) {
-        if (eval > 0) {
-            TT::set(board.key, eval - 1, depth, bestMove, TT_EXACT);
-            return eval - 1;
-        }
-        else {
-            TT::set(board.key, eval + 1, depth, bestMove, TT_EXACT);
-            return eval + 1;
-        }
-    }
+    // Adjust for mate scores & update transposition table
     if (illegals == moves.size()) {
-        TT::set(board.key, -MATE_SCORE, depth, bestMove, TT_EXACT);
-        return -MATE_SCORE;
+        eval = -MATE_SCORE;
+    }
+    else if (abs(eval) > MATE_SCORE - 100) {
+        if (eval > 0) eval--;
+        else eval++;
     }
 
     // Update transposition table.
