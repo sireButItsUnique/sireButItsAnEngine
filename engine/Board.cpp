@@ -41,6 +41,9 @@ void Board::setStartingPos() {
 
     // Gen zobrist key
     this->key = this->getZobristKey();
+    threeFoldReps = {};
+    threeFoldReps[key] = 1;
+    threeFold = false;
 }
 
 void Board::setFenPos(string pos, string turn, string castling, string enPassant) {
@@ -106,6 +109,9 @@ void Board::setFenPos(string pos, string turn, string castling, string enPassant
 
     // Gen zobrist key
     this->key = this->getZobristKey();
+    threeFoldReps = {};
+    threeFoldReps[key] = 1;
+    threeFold = false;
 
     // TODO: En Passant not implemented yet
 }
@@ -309,6 +315,9 @@ void Board::movePiece(uint32_t move) {
         key ^= Zobrist::PIECES[PAWN + color][to];
         key ^= Zobrist::PIECES[Move::promotionPiece(move)][to];
     }
+
+    threeFoldReps[key]++; // Increment the repetition count for this position
+    if (threeFoldReps[key] >= 3) threeFold = true;
 }
 
 uint64_t Board::getZobristKey() {

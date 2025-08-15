@@ -133,6 +133,9 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         }
     }
     Search::NODE_COUNT++;
+
+    // Check for threefold draw
+    if (board.threeFold) return 0; // If the position is drawn
     
     // Check for transposition table entry (not allowed in root search node)
     uint32_t hashMove = 0;
