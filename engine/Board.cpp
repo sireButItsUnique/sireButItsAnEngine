@@ -129,7 +129,7 @@ void Board::movePiece(uint32_t move) {
             colorBoards[color] ^= (0x9ULL << (color * 56));
             colorBoards[color] ^= (0x14ULL << (color * 56));
 
-            // Update mailbox & zobrist key
+            // Update mailbox & zobrist keys
             if (color) {
                 mailbox[56] = 12;
                 mailbox[57] = 12;
