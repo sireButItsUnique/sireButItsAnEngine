@@ -133,9 +133,6 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         }
     }
     Search::NODE_COUNT++;
-
-    // Check for threefold draw
-    if (board.threeFold) return 0; // If the position is drawn
     
     // Check for transposition table entry (not allowed in root search node)
     uint32_t hashMove = 0;
@@ -205,7 +202,8 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
 
         // Evaluate the new position
         int32_t score; // Negative because score is from opponent's perspective
-        if (depth > 0) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV); // Negate for minimax
+        if (newBoard.threeFold) score = 0; // Draw due to threefold repetition
+        else if (depth > 0) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV); // Negate for minimax
         else score = -Search::finishCaptures(newBoard, -beta, -alpha, 0); // Leaf node evaluation
 
         // Time management here so we don't write bs into transposition table (thanks sebastian lague)
