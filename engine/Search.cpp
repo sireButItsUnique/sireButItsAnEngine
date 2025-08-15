@@ -133,7 +133,11 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         }
     }
     Search::NODE_COUNT++;
-    
+    int realDepth = MAX_DEPTH - depth; // depth = how many left, realDepth = how many already done (same realDepth = similar board state)
+
+    // Threefold draw check (not allowed in root search node)
+    if ((depth != MAX_DEPTH) && board.threeFold()) return 0;
+
     // Check for transposition table entry (not allowed in root search node)
     uint32_t hashMove = 0;
     TTEntry *entry = TT::get(board.key);
@@ -158,7 +162,6 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     scored.reserve(240);
     MoveGen::genMoves(board, moves, board.turn);
     
-    int realDepth = MAX_DEPTH - depth; // depth = how many left, realDepth = how many already done (same realDepth = similar board state)
     bool beatAlpha = false; // Flag to check if we beat alpha in this node
     for (uint32_t move : moves) {
         int32_t score;
@@ -202,8 +205,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
 
         // Evaluate the new position
         int32_t score; // Negative because score is from opponent's perspective
-        if (newBoard.threeFold()) score = 0; // If the position is drawn
-        else if (depth > 0) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV); // Negate for minimax
+        if (depth > 0) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV); // Negate for minimax
         else score = -Search::finishCaptures(newBoard, -beta, -alpha, 0); // Leaf node evaluation
 
         // Time management here so we don't write bs into transposition table (thanks sebastian lague)
