@@ -31,6 +31,7 @@ void Search::initSearch(int64_t timeLimit) {
 
     killer = vector<vector<uint32_t>>(36, vector<uint32_t>(2, 0)); // Initialize killer moves for each depth
     history = vector<int32_t>(16384, 0); // Initialize history table for quiet move ordering
+    TT::clear();
 }
 
 // @brief temporary function to evaluate the board until nnue

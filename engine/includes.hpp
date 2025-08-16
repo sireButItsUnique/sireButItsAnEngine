@@ -14,5 +14,6 @@
 #include <vector>
 #include <cmath>
 #include <random>
+#include <cstring>
 #include <ext/pb_ds/assoc_container.hpp>
 using namespace std;

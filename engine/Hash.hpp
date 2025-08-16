@@ -59,7 +59,7 @@ namespace TT {
         TTEntry *entry = TT::table + (key % TT_SIZE);
 
         // Write the new entry
-        if (depth >= entry->depth || entry->key != key) {
+        if (depth >= entry->depth) {
             entry->key = key;
             entry->eval = eval;
             entry->depth = depth;
@@ -67,8 +67,6 @@ namespace TT {
             entry->flag = flag;
         }
     }
-
-
 
     /**
      * @brief Gets a transposition table entry.
@@ -82,5 +80,9 @@ namespace TT {
         if (entry->key == key) return entry;
         
         return nullptr; // No valid entry found
+    }
+
+    inline void clear() {
+        memset(TT::table, 0, sizeof(TTEntry) * TT_SIZE);
     }
 }
