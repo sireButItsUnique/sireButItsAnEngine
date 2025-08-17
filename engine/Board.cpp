@@ -44,7 +44,6 @@ void Board::setStartingPos() {
 
     // Setup threeFoldReps
     threeFoldReps.clear();
-    threeFoldReps.reserve(32);
     threeFoldReps.push_back(this->key);
 }
 
@@ -114,7 +113,6 @@ void Board::setFenPos(string pos, string turn, string castling, string enPassant
     
     // Setup threeFoldReps
     threeFoldReps.clear();
-    threeFoldReps.reserve(32);
     threeFoldReps.push_back(this->key);
 }
 

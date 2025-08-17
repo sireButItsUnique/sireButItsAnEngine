@@ -14,4 +14,5 @@
 #include <vector>
 #include <cmath>
 #include <random>
+#include "fast.hpp"
 using namespace std;
