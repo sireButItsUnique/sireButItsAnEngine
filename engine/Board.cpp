@@ -41,10 +41,6 @@ void Board::setStartingPos() {
 
     // Gen zobrist key
     this->key = this->getZobristKey();
-
-    // Setup threeFoldReps
-    threeFoldReps.clear();
-    threeFoldReps.push_back(this->key);
 }
 
 void Board::setFenPos(string pos, string turn, string castling, string enPassant) {
@@ -110,10 +106,6 @@ void Board::setFenPos(string pos, string turn, string castling, string enPassant
 
     // Gen zobrist key
     this->key = this->getZobristKey();
-    
-    // Setup threeFoldReps
-    threeFoldReps.clear();
-    threeFoldReps.push_back(this->key);
 }
 
 void Board::movePiece(uint32_t move) {
@@ -315,8 +307,6 @@ void Board::movePiece(uint32_t move) {
         key ^= Zobrist::PIECES[PAWN + color][to];
         key ^= Zobrist::PIECES[Move::promotionPiece(move)][to];
     }
-
-    threeFoldReps.push_back(key);
 }
 
 uint64_t Board::getZobristKey() {

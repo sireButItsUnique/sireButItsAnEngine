@@ -10,7 +10,6 @@ public:
 	int16_t mailbox[64]; // mailbox for piece positions
 	uint64_t key; // zobrist key for the position
 	bool castlingRights[4]; // castling rights: 0=white king, 1=white queen, 2=black king, 3=black queen
-	fast::vector<uint64_t> threeFoldReps;
 
 	/**
 	 * @brief who's turn it is to move, white=false; black=true
@@ -81,7 +80,7 @@ public:
 	 *
 	 * @return true if the position is a threefold repetition, false otherwise
 	 */
-	inline bool threeFold() {
+	inline bool threeFold(fast::lvector<uint64_t>& threeFoldReps) {
 		int cnt = 0;
 		for (uint64_t rep: threeFoldReps) {
 			if (rep == key) {

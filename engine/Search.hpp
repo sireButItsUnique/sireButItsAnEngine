@@ -37,7 +37,7 @@ namespace Search {
      *
      * @param TIME_LIMIT The time limit for the search in milliseconds.
      */
-    void initSearch(int64_t TIME_LIMIT);
+    void initSearch(int64_t TIME_LIMIT, fast::lvector<uint64_t> threeFoldReps);
 
     /**
      * @brief Updates the history table for move ordering.

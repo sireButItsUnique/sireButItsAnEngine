@@ -7,6 +7,7 @@ namespace Search {
     int64_t TIME_LIMIT;
     int MAX_DEPTH;
     bool ABORT_SEARCH; // Flag to abort search if needed
+    fast::lvector<uint64_t> threeFoldReps;
 
     // Standard move ordering stuff
     uint32_t killer[64][2]; // Killer moves for each depth
@@ -23,11 +24,12 @@ namespace Search {
     };
 }
 
-void Search::initSearch(int64_t timeLimit) {
+void Search::initSearch(int64_t timeLimit, fast::lvector<uint64_t> threeFoldReps) {
     START_TIME = chrono::high_resolution_clock::now();
     TIME_LIMIT = timeLimit;
     ABORT_SEARCH = false;
     NODE_COUNT = 0;
+    Search::threeFoldReps = threeFoldReps;
 
     memset(killer, 0, sizeof(killer)); // Initialize killer moves to zero
     memset(history, 0, sizeof(history)); // Initialize history table to zero
@@ -133,7 +135,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     Search::NODE_COUNT++;
 
     // Check for draw
-    if (depth != MAX_DEPTH && board.threeFold()) {
+    if (depth != MAX_DEPTH && board.threeFold(threeFoldReps)) {
         return 0; // Draw by threefold repetition
     }
     
@@ -205,6 +207,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
             illegals++;
             continue; // Skip moves that leave the king in check
         }
+        threeFoldReps.push_back(newBoard.key); // Add the new position to the threefold repetitions
 
         // Evaluate the new position
         int32_t score; // Negative because score is from opponent's perspective
@@ -236,6 +239,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
             TT::set(board.key, score, depth, move, TT_LOWER); // Store the transposition table entry
 
             // Exit early since we found a move that is too good
+            threeFoldReps.pop_back(); // Remove the cur position
             return score;
         }
 
@@ -249,6 +253,9 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
                 PV[depth][0] = move; // Store the best move for this depth
             }
         }
+        
+        // Pop the last position from the threefold repetitions
+        threeFoldReps.pop_back();
     }
 
     // Adjust for mate scores & update transposition table

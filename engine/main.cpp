@@ -8,6 +8,8 @@
 
 string cmd;
 Board board;
+fast::lvector<uint64_t> threeFoldReps;
+
 int main(int argc, char *argv[]) {
     MoveGen::init(); // Initialize ray attacks and lookup tables
     Zobrist::init(); // Initialize Zobrist hashing tables
@@ -15,8 +17,10 @@ int main(int argc, char *argv[]) {
     // Run benchmark
     if (argc == 2 && std::string(argv[1]) == "bench") {
         board.setStartingPos();
+        threeFoldReps.clear();
+        threeFoldReps.push_back(board.key);
         vector<vector<uint32_t>> moveHistory(64, vector<uint32_t>(64, 0));
-        Search::initSearch(INFINITE_SCORE);
+        Search::initSearch(INFINITE_SCORE, threeFoldReps);
         auto start = chrono::high_resolution_clock::now();
 
         for (int depth = 1; depth <= 8; ++depth) {
@@ -52,6 +56,8 @@ int main(int argc, char *argv[]) {
             // set initial position
             if (tokens[1] == "startpos") board.setStartingPos();
             else if (tokens[1] == "fen") board.setFenPos(tokens[2], tokens[3], tokens[4], tokens[5]);
+            threeFoldReps.clear();
+            threeFoldReps.push_back(board.key);
 
             // add moves to position 
             if (tokens[1] == "startpos" && tokens.size() > 2) {
@@ -84,6 +90,7 @@ int main(int argc, char *argv[]) {
                     }
 
                     board.movePiece(move);
+                    threeFoldReps.push_back(board.key);
                 }
             }
             if (tokens[1] == "fen" && tokens.size() > 8) {
@@ -115,6 +122,7 @@ int main(int argc, char *argv[]) {
                     }
 
                     board.movePiece(move);
+                    threeFoldReps.push_back(board.key);
                 }
             }
         } 
@@ -154,7 +162,7 @@ int main(int argc, char *argv[]) {
             
             // static depth search if depth is given
             if (depth != -1) {
-                Search::initSearch(INFINITE_SCORE);
+                Search::initSearch(INFINITE_SCORE, threeFoldReps);
                 Search::MAX_DEPTH = depth;
                 eval = Search::bestMoves(board, depth, -INFINITE_SCORE, INFINITE_SCORE, moveHistory);
                 move = moveHistory[depth][0];
@@ -162,7 +170,7 @@ int main(int argc, char *argv[]) {
             
             // iterative deepening
             else {
-                Search::initSearch(timeCap);
+                Search::initSearch(timeCap, threeFoldReps);
                 depth = 0;
                 for ( ; depth < 16; ++depth) {
                     Search::MAX_DEPTH = depth;
