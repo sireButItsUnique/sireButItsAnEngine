@@ -10,6 +10,7 @@ public:
 	int16_t mailbox[64]; // mailbox for piece positions
 	uint64_t key; // zobrist key for the position
 	bool castlingRights[4]; // castling rights: 0=white king, 1=white queen, 2=black king, 3=black queen
+	vector<uint64_t> threeFoldReps;
 
 	/**
 	 * @brief who's turn it is to move, white=false; black=true
@@ -74,6 +75,22 @@ public:
 	uint64_t getZobristKey();
 
 	uint64_t checkKey();
+
+	/**
+	 * @brief checks if the position is a threefold repetition
+	 *
+	 * @return true if the position is a threefold repetition, false otherwise
+	 */
+	inline bool threeFold() {
+		int cnt = 0;
+		for (uint64_t rep: threeFoldReps) {
+			if (rep == key) {
+				cnt++;
+				if (cnt >= 3) return true;
+			}
+		}
+		return false;
+	}
 
 	/**
 	 * @brief prints the board to stdout

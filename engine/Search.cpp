@@ -133,21 +133,29 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         }
     }
     Search::NODE_COUNT++;
+
+    // Check for draw
+    if (depth != MAX_DEPTH && board.threeFold()) {
+        return 0; // Draw by threefold repetition
+    }
     
     // Check for transposition table entry (not allowed in root search node)
     uint32_t hashMove = 0;
     TTEntry *entry = TT::get(board.key);
     if (depth != MAX_DEPTH) {
-        if (entry && entry->depth >= depth) {
-            // Entry exists and satisfies depth requirement
-            if (entry->flag == TT_EXACT) return entry->eval;
-            else if (entry->flag == TT_LOWER) {
-                if (entry->eval >= beta) return entry->eval; // Will never be played, we can prune the search
-            } else if (entry->flag == TT_UPPER) {
-                if (entry->eval <= alpha) return entry->eval; // Worse for sure, we can prune the search
-            }
+        if (entry) {
 
-            hashMove = entry->move; // Get the best move from the transposition table
+            // Only use the entry if it is good enough for the current search depth
+            if (entry->depth >= depth) {
+                if (entry->flag == TT_EXACT) return entry->eval;
+                else if (entry->flag == TT_LOWER) {
+                    if (entry->eval >= beta) return entry->eval; // Will never be played, we can prune the search
+                } else if (entry->flag == TT_UPPER) {
+                    if (entry->eval <= alpha) return entry->eval; // Worse for sure, we can prune the search
+                }
+
+                hashMove = entry->move; // Get the best move from the transposition table
+            }
         }
     }
 
