@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
         
         else if (cmd == "go") {
 
-            // sorting out the command line arguments
+            // Sorting out the command line arguments
             getline(cin, cmd);
             vector<string> tokens;
             SPLIT_STRING(cmd, tokens);
