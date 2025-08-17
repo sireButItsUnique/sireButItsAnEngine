@@ -76,6 +76,22 @@ public:
 	uint64_t checkKey();
 
 	/**
+	 * @brief checks if the position is a threefold repetition
+	 *
+	 * @return true if the position is a threefold repetition, false otherwise
+	 */
+	inline bool threeFold(fast::lvector<uint64_t>& threeFoldReps) {
+		int cnt = 0;
+		for (uint64_t rep: threeFoldReps) {
+			if (rep == key) {
+				cnt++;
+				if (cnt >= 3) return true;
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * @brief prints the board to stdout
 	 */
 	void print();

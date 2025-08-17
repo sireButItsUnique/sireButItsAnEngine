@@ -106,8 +106,6 @@ void Board::setFenPos(string pos, string turn, string castling, string enPassant
 
     // Gen zobrist key
     this->key = this->getZobristKey();
-
-    // TODO: En Passant not implemented yet
 }
 
 void Board::movePiece(uint32_t move) {

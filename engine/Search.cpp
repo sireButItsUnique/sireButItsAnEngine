@@ -7,10 +7,11 @@ namespace Search {
     int64_t TIME_LIMIT;
     int MAX_DEPTH;
     bool ABORT_SEARCH; // Flag to abort search if needed
+    fast::lvector<uint64_t> threeFoldReps;
 
     // Standard move ordering stuff
-    vector<vector<uint32_t>> killer; // Killer moves for each depth
-    vector<int32_t> history; // History table for quiet move ordering
+    uint32_t killer[64][2]; // Killer moves for each depth
+    int32_t history[16384]; // History table for quiet move ordering
     constexpr int32_t MVV_LVA[7][7] = {
         // PNBRQKX
         {15, 14, 13, 12, 11, 10, 0}, // Taking a pawn
@@ -23,14 +24,15 @@ namespace Search {
     };
 }
 
-void Search::initSearch(int64_t timeLimit) {
+void Search::initSearch(int64_t timeLimit, fast::lvector<uint64_t> threeFoldReps) {
     START_TIME = chrono::high_resolution_clock::now();
     TIME_LIMIT = timeLimit;
     ABORT_SEARCH = false;
     NODE_COUNT = 0;
+    Search::threeFoldReps = threeFoldReps;
 
-    killer = vector<vector<uint32_t>>(36, vector<uint32_t>(2, 0)); // Initialize killer moves for each depth
-    history = vector<int32_t>(16384, 0); // Initialize history table for quiet move ordering
+    memset(killer, 0, sizeof(killer)); // Initialize killer moves to zero
+    memset(history, 0, sizeof(history)); // Initialize history table to zero
 }
 
 // @brief temporary function to evaluate the board until nnue
@@ -79,10 +81,8 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
     eval = staticEval; // Start with static evaluation since we are not forced to play a capture
 
     // Generate all possible moves for the current player
-    vector<uint32_t> moves;
-    vector<uint32_t> captures;
-    moves.reserve(240);
-    captures.reserve(240);
+    fast::vector<uint32_t> moves;
+    fast::vector<uint32_t> captures;
     MoveGen::genMoves(board, moves, board.turn);
 
     // Collect capturing moves and sort them by qsearch history
@@ -133,29 +133,35 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         }
     }
     Search::NODE_COUNT++;
+
+    // Check for draw
+    if (depth != MAX_DEPTH && board.threeFold(threeFoldReps)) {
+        return 0; // Draw by threefold repetition
+    }
     
     // Check for transposition table entry (not allowed in root search node)
     uint32_t hashMove = 0;
     TTEntry *entry = TT::get(board.key);
     if (depth != MAX_DEPTH) {
-        if (entry && entry->depth >= depth) {
-            // Entry exists and satisfies depth requirement
-            if (entry->flag == TT_EXACT) return entry->eval;
-            else if (entry->flag == TT_LOWER) {
-                if (entry->eval >= beta) return entry->eval; // Will never be played, we can prune the search
-            } else if (entry->flag == TT_UPPER) {
-                if (entry->eval <= alpha) return entry->eval; // Worse for sure, we can prune the search
-            }
+        if (entry) {
 
-            hashMove = entry->move; // Get the best move from the transposition table
+            // Only use the entry if it is good enough for the current search depth
+            if (entry->depth >= depth) {
+                if (entry->flag == TT_EXACT) return entry->eval;
+                else if (entry->flag == TT_LOWER) {
+                    if (entry->eval >= beta) return entry->eval; // Will never be played, we can prune the search
+                } else if (entry->flag == TT_UPPER) {
+                    if (entry->eval <= alpha) return entry->eval; // Worse for sure, we can prune the search
+                }
+
+                hashMove = entry->move; // Get the best move from the transposition table
+            }
         }
     }
 
     // Generate moves and order them
-    vector<uint32_t> moves;
-    vector<pair<int32_t, uint32_t>> scored;
-    moves.reserve(240);
-    scored.reserve(240);
+    fast::vector<uint32_t> moves;
+    fast::vector<pair<int32_t, uint32_t>> scored;
     MoveGen::genMoves(board, moves, board.turn);
     
     int realDepth = MAX_DEPTH - depth; // depth = how many left, realDepth = how many already done (same realDepth = similar board state)
@@ -183,7 +189,9 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
          
         scored.push_back({score, move});
     }
-    sort(scored.rbegin(), scored.rend());
+    sort(scored.begin(), scored.end(), [](const pair<int32_t, uint32_t>& a, const pair<int32_t, uint32_t>& b) {
+        return a.first > b.first; // Sort in descending order
+    });
 
     // Initialize evaluation score to a very low value
     int32_t eval = -INFINITE_SCORE;
@@ -199,6 +207,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
             illegals++;
             continue; // Skip moves that leave the king in check
         }
+        threeFoldReps.push_back(newBoard.key); // Add the new position to the threefold repetitions
 
         // Evaluate the new position
         int32_t score; // Negative because score is from opponent's perspective
@@ -230,6 +239,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
             TT::set(board.key, score, depth, move, TT_LOWER); // Store the transposition table entry
 
             // Exit early since we found a move that is too good
+            threeFoldReps.pop_back(); // Remove the cur position
             return score;
         }
 
@@ -243,6 +253,9 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
                 PV[depth][0] = move; // Store the best move for this depth
             }
         }
+        
+        // Pop the last position from the threefold repetitions
+        threeFoldReps.pop_back();
     }
 
     // Adjust for mate scores & update transposition table

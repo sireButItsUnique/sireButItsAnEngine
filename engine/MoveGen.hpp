@@ -36,13 +36,13 @@ namespace MoveGen {
      * @param moves Vector to store the generated moves.
      * @param color The color for which to generate moves (WHITE or BLACK).
      */
-    void genMoves(Board& board, vector<uint32_t>& moves, bool color);
+    void genMoves(Board& board, fast::vector<uint32_t>& moves, bool color);
 
-    void genPawnMoves(Board& board, vector<uint32_t>& moves, bool color);
-    void genKnightMoves(Board& board, vector<uint32_t>& moves, bool color);
-    void genBishopMoves(Board& board, vector<uint32_t>& moves, bool color);
-    void genRookMoves(Board& board, vector<uint32_t>& moves, bool color);
-    void genQueenMoves(Board& board, vector<uint32_t>& moves, bool color);
-    void genKingMoves(Board& board, vector<uint32_t>& moves, bool color);
-    void genCastlingMoves(Board& board, vector<uint32_t>& moves, bool color);
+    void genPawnMoves(Board& board, fast::vector<uint32_t>& moves, bool color);
+    void genKnightMoves(Board& board, fast::vector<uint32_t>& moves, bool color);
+    void genBishopMoves(Board& board, fast::vector<uint32_t>& moves, bool color);
+    void genRookMoves(Board& board, fast::vector<uint32_t>& moves, bool color);
+    void genQueenMoves(Board& board, fast::vector<uint32_t>& moves, bool color);
+    void genKingMoves(Board& board, fast::vector<uint32_t>& moves, bool color);
+    void genCastlingMoves(Board& board, fast::vector<uint32_t>& moves, bool color);
 }

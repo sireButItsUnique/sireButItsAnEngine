@@ -1,7 +1,7 @@
 #include "MoveGen.hpp"
 using namespace MoveGen;
 
-void MoveGen::genMoves(Board& board, vector<uint32_t>& moves, bool color) {
+void MoveGen::genMoves(Board& board, fast::vector<uint32_t>& moves, bool color) {
 
     // Generate moves for each piece type
     genPawnMoves(board, moves, color);
@@ -15,7 +15,7 @@ void MoveGen::genMoves(Board& board, vector<uint32_t>& moves, bool color) {
     genCastlingMoves(board, moves, color);
 }
 
-void MoveGen::genKnightMoves(Board& board, vector<uint32_t>& moves, bool color) {
+void MoveGen::genKnightMoves(Board& board, fast::vector<uint32_t>& moves, bool color) {
 
     uint64_t knightBoard = board.pieceBoards[KNIGHT + color];
 	
@@ -38,7 +38,7 @@ void MoveGen::genKnightMoves(Board& board, vector<uint32_t>& moves, bool color) 
 	}
 }
 
-void MoveGen::genKingMoves(Board& board, vector<uint32_t>& moves, bool color) {
+void MoveGen::genKingMoves(Board& board, fast::vector<uint32_t>& moves, bool color) {
 
     uint64_t king = board.pieceBoards[KING + color];
 
@@ -58,7 +58,7 @@ void MoveGen::genKingMoves(Board& board, vector<uint32_t>& moves, bool color) {
 	}
 }
 
-void MoveGen::genBishopMoves(Board& board, vector<uint32_t>& moves, bool color) {
+void MoveGen::genBishopMoves(Board& board, fast::vector<uint32_t>& moves, bool color) {
 
     uint64_t bishopBoard = board.pieceBoards[BISHOP + color];
     uint64_t friendlyPieces = board.colorBoards[color];
@@ -87,7 +87,7 @@ void MoveGen::genBishopMoves(Board& board, vector<uint32_t>& moves, bool color) 
 	}
 }
 
-void MoveGen::genRookMoves(Board& board, vector<uint32_t>& moves, bool color) {
+void MoveGen::genRookMoves(Board& board, fast::vector<uint32_t>& moves, bool color) {
 
     uint64_t rookBoard = board.pieceBoards[ROOK + color];
     uint64_t friendlyPieces = board.colorBoards[color];
@@ -116,7 +116,7 @@ void MoveGen::genRookMoves(Board& board, vector<uint32_t>& moves, bool color) {
 	}
 }
 
-void MoveGen::genQueenMoves(Board& board, vector<uint32_t>& moves, bool color) {
+void MoveGen::genQueenMoves(Board& board, fast::vector<uint32_t>& moves, bool color) {
 
     uint64_t queenBoard = board.pieceBoards[QUEEN + color];
     uint64_t friendlyPieces = board.colorBoards[color];
@@ -148,7 +148,7 @@ void MoveGen::genQueenMoves(Board& board, vector<uint32_t>& moves, bool color) {
 	}
 }
 
-void MoveGen::genPawnMoves(Board& board, vector<uint32_t>& moves, bool color) { // fix endian
+void MoveGen::genPawnMoves(Board& board, fast::vector<uint32_t>& moves, bool color) { // fix endian
 
     uint64_t pawnBoard = board.pieceBoards[PAWN + color];
     uint64_t friendlyPieces = board.colorBoards[color];
@@ -214,7 +214,7 @@ void MoveGen::genPawnMoves(Board& board, vector<uint32_t>& moves, bool color) { 
 	}
 }
 
-void MoveGen::genCastlingMoves(Board& board, vector<uint32_t>& moves, bool color) {
+void MoveGen::genCastlingMoves(Board& board, fast::vector<uint32_t>& moves, bool color) {
 
     bool canCastleQueen = (color ? board.castlingRights[BLACK_QUEENSIDE] : board.castlingRights[WHITE_QUEENSIDE]);
     bool canCastleKing = (color ? board.castlingRights[BLACK_KINGSIDE] : board.castlingRights[WHITE_KINGSIDE]);
