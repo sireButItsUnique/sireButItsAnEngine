@@ -185,9 +185,11 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
             score += history[Move::id(move)]; // Historical value
         }
          
-        scored.push_back({-score, move}); // negate score because we only do ascending sort
+        scored.push_back({score, move});
     }
-    sort(scored.begin(), scored.end());
+    sort(scored.begin(), scored.end(), [](const pair<int32_t, uint32_t>& a, const pair<int32_t, uint32_t>& b) {
+        return a.first > b.first; // Sort in descending order
+    });
 
     // Initialize evaluation score to a very low value
     int32_t eval = -INFINITE_SCORE;
