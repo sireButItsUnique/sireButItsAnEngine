@@ -9,8 +9,8 @@ namespace Search {
     bool ABORT_SEARCH; // Flag to abort search if needed
 
     // Standard move ordering stuff
-    vector<vector<uint32_t>> killer; // Killer moves for each depth
-    vector<int32_t> history; // History table for quiet move ordering
+    uint32_t killer[64][2]; // Killer moves for each depth
+    int32_t history[16384]; // History table for quiet move ordering
     constexpr int32_t MVV_LVA[7][7] = {
         // PNBRQKX
         {15, 14, 13, 12, 11, 10, 0}, // Taking a pawn
@@ -29,8 +29,8 @@ void Search::initSearch(int64_t timeLimit) {
     ABORT_SEARCH = false;
     NODE_COUNT = 0;
 
-    killer = vector<vector<uint32_t>>(36, vector<uint32_t>(2, 0)); // Initialize killer moves for each depth
-    history = vector<int32_t>(16384, 0); // Initialize history table for quiet move ordering
+    memset(killer, 0, sizeof(killer)); // Initialize killer moves to zero
+    memset(history, 0, sizeof(history)); // Initialize history table to zero
 }
 
 // @brief temporary function to evaluate the board until nnue
@@ -79,10 +79,8 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
     eval = staticEval; // Start with static evaluation since we are not forced to play a capture
 
     // Generate all possible moves for the current player
-    vector<uint32_t> moves;
-    vector<uint32_t> captures;
-    moves.reserve(240);
-    captures.reserve(240);
+    fast::vector<uint32_t> moves;
+    fast::vector<uint32_t> captures;
     MoveGen::genMoves(board, moves, board.turn);
 
     // Collect capturing moves and sort them by qsearch history
@@ -160,10 +158,8 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     }
 
     // Generate moves and order them
-    vector<uint32_t> moves;
-    vector<pair<int32_t, uint32_t>> scored;
-    moves.reserve(240);
-    scored.reserve(240);
+    fast::vector<uint32_t> moves;
+    fast::vector<pair<int32_t, uint32_t>> scored;
     MoveGen::genMoves(board, moves, board.turn);
     
     int realDepth = MAX_DEPTH - depth; // depth = how many left, realDepth = how many already done (same realDepth = similar board state)
@@ -189,9 +185,9 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
             score += history[Move::id(move)]; // Historical value
         }
          
-        scored.push_back({score, move});
+        scored.push_back({-score, move}); // negate score because we only do ascending sort
     }
-    sort(scored.rbegin(), scored.rend());
+    sort(scored.begin(), scored.end());
 
     // Initialize evaluation score to a very low value
     int32_t eval = -INFINITE_SCORE;

@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
 
         else if (cmd == "d") {
             board.print();
-            vector<uint32_t> moves;
+            fast::vector<uint32_t> moves;
             MoveGen::genMoves(board, moves, board.turn);
             cout << "Moves: ";
             for (uint32_t move : moves) {
