@@ -5,7 +5,7 @@ require("dotenv").config();
 
 async function listenGame(gameId, color) {
 	// init engine
-	let engine = spawn("../build/Engine.exe", {
+	let engine = spawn("../sireButItsAnEngine", {
 		stdio: ["pipe", "pipe", "pipe"],
 	});
 
