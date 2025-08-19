@@ -230,8 +230,8 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
 
         // Reverse frutility pruning
         if (!inCheck && !isPvNode && !nearMate) {
-            if (eval >= beta + (100 * depth)) {
-                return eval - (100 * depth); // Prune the branch
+            if (eval >= beta + (150 * depth)) {
+                return eval - (150 * depth); // Prune the branch
             }
         }
 
