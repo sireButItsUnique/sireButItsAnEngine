@@ -121,8 +121,8 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
     return eval;
 }
 
-int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, vector<vector<uint32_t>>& PV) {
-    
+int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, vector<vector<uint32_t>>& PV, bool isPvNode) {
+
     // Time management
     if (Search::ABORT_SEARCH) return 0;
     if ((NODE_COUNT & 1023) == 0) {
@@ -197,9 +197,16 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     int32_t eval = -INFINITE_SCORE;
     uint64_t bestMove = 0; // Best move for this depth (keep for TT ordering)
 
+    // Get metadata for the current node
+    bool inCheck = board.kingIsAttacked(board.turn);
+    bool nearMate = false;
+    if (abs(alpha) > MATE_SCORE - 100 || abs(beta) > MATE_SCORE - 100) nearMate = true;
+
     // Iterate through all possible moves
     int illegals = 0;
     for (int idx = 0; idx < scored.size(); ++idx) {
+        
+        // Move making shenanigans
         uint32_t move = scored[idx].second;
         Board newBoard = board; // Create a copy of the board
         newBoard.movePiece(move); // Make the move
@@ -209,15 +216,26 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         }
         threeFoldReps.push_back(newBoard.key); // Add the new position to the threefold repetitions
 
+        // PV node checking
+        bool childIsPv = false; // Assume first move is always a PV only if parent is PV 
+        if (isPvNode && idx == 0) childIsPv = true; // (true with perfect move ordering)
+
         // Evaluate the new position
         int32_t score; // Negative because score is from opponent's perspective
-        if (depth > 0) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV); // Negate for minimax
+        if (depth > 0) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV, childIsPv); // Negate for minimax
         else score = -Search::finishCaptures(newBoard, -beta, -alpha, 0); // Leaf node evaluation
 
         // Time management here so we don't write bs into transposition table (thanks sebastian lague)
         if (Search::ABORT_SEARCH) return 0;
 
-        // Prune if move is too good -> opp has a better move last ply
+        // Reverse frutility pruning
+        if (!inCheck && !isPvNode && !nearMate) {
+            if (eval >= beta + (150 * depth)) {
+                return eval - (150 * depth); // Prune the branch
+            }
+        }
+
+        // Beta cutoff: move is too good, opponent has a better move last ply
         if (score >= beta) {
 
             // Store killer moves
@@ -243,10 +261,12 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
             return score;
         }
 
-        // Update evaluation score & update bounds
+        // Update evaluation score
         if (score > eval) {
             eval = score;
             bestMove = move;
+
+            // Alpha cutoff: move is better than the current alpha, is a PV node
             if (score > alpha) {
                 beatAlpha = true;
                 alpha = score;

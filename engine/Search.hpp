@@ -65,7 +65,8 @@ namespace Search {
      * @param alpha The highest score that the cur player is guranteed
      * @param beta The highest score that the opp player is guranteed. If the score is greater than beta, the search can be pruned since from opp's POV it will be worse than beta.
      * @param PV Stores the best moves
+     * @param isPvNode Indicates if the current node is an accurate pv node
      * @return An integer score representing the evaluation of the best move.
      */
-    int32_t bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, vector<vector<uint32_t>>& PV);
+    int32_t bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, vector<vector<uint32_t>>& PV, bool isPvNode);
 }
