@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
             }
 
             int64_t timeLeft = (board.turn == WHITE) ? wtime : btime;
-            int64_t timeCap = max(int64_t(20), timeLeft / 20);
+            int64_t timeCap = timeLeft / 20;
             timeCap = min(timeCap, int64_t(5000)); // Cap at 5 seconds
 
             // initiating search
