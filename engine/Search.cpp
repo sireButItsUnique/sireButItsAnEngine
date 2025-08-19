@@ -194,6 +194,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     });
 
     // Get metadata for the current node
+    int32_t staticEval = evalBoard(board);
     bool inCheck = board.kingIsAttacked(board.turn);
     bool pawnEndgame = false;
     for (int i = KNIGHT + WHITE; i <= QUEEN + BLACK; i++) {
@@ -204,14 +205,13 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
 
     // Reverse frutility pruning
     if (!inCheck && !isPvNode && !nearMate) {
-        int32_t score = evalBoard(board);
-        if (score >= beta + (150 * depth)) {
-            return score - (150 * depth); // Prune the branch
+        if (staticEval >= beta + (150 * depth)) {
+            return staticEval - (150 * depth); // Prune the branch
         }
     }
 
     // Null move pruning
-    if (!inCheck && !pawnEndgame) {
+    if (!inCheck && !pawnEndgame && staticEval >= beta) {
         board.turn = !board.turn; // Switch turn for null move
         int32_t nullMoveScore = -Search::bestMoves(board, max(0, depth - 4), -beta, -alpha, PV, false); // Null move search
         board.turn = !board.turn; // Switch back turn
