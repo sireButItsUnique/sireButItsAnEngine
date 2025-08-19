@@ -193,14 +193,35 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         return a.first > b.first; // Sort in descending order
     });
 
+    // Get metadata for the current node
+    int32_t staticEval = evalBoard(board);
+    bool inCheck = board.kingIsAttacked(board.turn);
+    bool pawnEndgame = false;
+    for (int i = KNIGHT + WHITE; i <= QUEEN + BLACK; i++) {
+        pawnEndgame |= board.pieceBoards[i];
+    }
+    pawnEndgame = !pawnEndgame;
+    bool nearMate = false;
+    if (abs(alpha) > MATE_SCORE - 100 || abs(beta) > MATE_SCORE - 100) nearMate = true;
+
+    // Reverse frutility pruning
+    if (!inCheck && !isPvNode && !nearMate) {
+        if (staticEval >= beta + (150 * depth)) {
+            return staticEval - (150 * depth); // Prune the branch
+        }
+    }
+
+    // Null move pruning
+    if (!inCheck && !pawnEndgame && staticEval >= beta) {
+        board.turn = !board.turn; // Switch turn for null move
+        int32_t nullMoveScore = -Search::bestMoves(board, max(0, depth - 4), -beta, -alpha, PV, false); // Null move search
+        board.turn = !board.turn; // Switch back turn
+        if (nullMoveScore >= beta) return nullMoveScore; // Prune the branch if null move score is too high
+    }
+
     // Initialize evaluation score to a very low value
     int32_t eval = -INFINITE_SCORE;
     uint64_t bestMove = 0; // Best move for this depth (keep for TT ordering)
-
-    // Get metadata for the current node
-    bool inCheck = board.kingIsAttacked(board.turn);
-    bool nearMate = false;
-    if (abs(alpha) > MATE_SCORE - 100 || abs(beta) > MATE_SCORE - 100) nearMate = true;
 
     // Iterate through all possible moves
     int illegals = 0;
@@ -227,13 +248,6 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
 
         // Time management here so we don't write bs into transposition table (thanks sebastian lague)
         if (Search::ABORT_SEARCH) return 0;
-
-        // Reverse frutility pruning
-        if (!inCheck && !isPvNode && !nearMate) {
-            if (eval >= beta + (150 * depth)) {
-                return eval - (150 * depth); // Prune the branch
-            }
-        }
 
         // Beta cutoff: move is too good, opponent has a better move last ply
         if (score >= beta) {
