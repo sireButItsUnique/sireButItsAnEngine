@@ -159,6 +159,32 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         }
     }
 
+    // Get metadata for the current node
+    int32_t staticEval = evalBoard(board);
+    bool inCheck = board.kingIsAttacked(board.turn);
+    bool pawnEndgame = false;
+    for (int i = KNIGHT + WHITE; i <= QUEEN + BLACK; i++) {
+        pawnEndgame |= board.pieceBoards[i];
+    }
+    pawnEndgame = !pawnEndgame;
+    bool nearMate = false;
+    if (abs(alpha) > MATE_SCORE - 100 || abs(beta) > MATE_SCORE - 100) nearMate = true;
+
+    // Reverse frutility pruning
+    // if (!inCheck && !isPvNode && !nearMate) {
+    //     if (staticEval >= beta + (150 * depth)) {
+    //         return staticEval - (150 * depth); // Prune the branch
+    //     }
+    // }
+
+    // // Null move pruning
+    // if (!inCheck && !pawnEndgame && staticEval >= beta) {
+    //     board.turn = !board.turn; // Switch turn for null move
+    //     int32_t nullMoveScore = -Search::bestMoves(board, max(0, depth - 4), -beta, -alpha, PV, false); // Null move search
+    //     board.turn = !board.turn; // Switch back turn
+    //     if (nullMoveScore >= beta) return nullMoveScore; // Prune the branch if null move score is too high
+    // }
+
     // Generate moves and order them
     fast::vector<uint32_t> moves;
     fast::vector<pair<int32_t, uint32_t>> scored;
@@ -192,32 +218,6 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     sort(scored.begin(), scored.end(), [](const pair<int32_t, uint32_t>& a, const pair<int32_t, uint32_t>& b) {
         return a.first > b.first; // Sort in descending order
     });
-
-    // Get metadata for the current node
-    int32_t staticEval = evalBoard(board);
-    bool inCheck = board.kingIsAttacked(board.turn);
-    bool pawnEndgame = false;
-    for (int i = KNIGHT + WHITE; i <= QUEEN + BLACK; i++) {
-        pawnEndgame |= board.pieceBoards[i];
-    }
-    pawnEndgame = !pawnEndgame;
-    bool nearMate = false;
-    if (abs(alpha) > MATE_SCORE - 100 || abs(beta) > MATE_SCORE - 100) nearMate = true;
-
-    // Reverse frutility pruning
-    if (!inCheck && !isPvNode && !nearMate) {
-        if (staticEval >= beta + (150 * depth)) {
-            return staticEval - (150 * depth); // Prune the branch
-        }
-    }
-
-    // Null move pruning
-    if (!inCheck && !pawnEndgame && staticEval >= beta) {
-        board.turn = !board.turn; // Switch turn for null move
-        int32_t nullMoveScore = -Search::bestMoves(board, max(0, depth - 4), -beta, -alpha, PV, false); // Null move search
-        board.turn = !board.turn; // Switch back turn
-        if (nullMoveScore >= beta) return nullMoveScore; // Prune the branch if null move score is too high
-    }
 
     // Initialize evaluation score to a very low value
     int32_t eval = -INFINITE_SCORE;
