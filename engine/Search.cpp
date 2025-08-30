@@ -36,25 +36,6 @@ void Search::initSearch(int64_t timeLimit, fast::lvector<uint64_t> threeFoldReps
     memset(history, 0, sizeof(history)); // Initialize history table to zero
 }
 
-// @brief temporary function to evaluate the board until nnue
-int32_t evalBoard(Board& board) {
-    int32_t score = 0;
-
-    // Evaluate material balance
-    score += _popcnt64(board.pieceBoards[PAWN + board.turn]) * 100; // Pawns
-    score -= _popcnt64(board.pieceBoards[PAWN + !board.turn]) * 100;
-    score += _popcnt64(board.pieceBoards[KNIGHT + board.turn]) * 300; // Knights
-    score -= _popcnt64(board.pieceBoards[KNIGHT + !board.turn]) * 300;
-    score += _popcnt64(board.pieceBoards[BISHOP + board.turn]) * 350; // Bishops
-    score -= _popcnt64(board.pieceBoards[BISHOP + !board.turn]) * 350;
-    score += _popcnt64(board.pieceBoards[ROOK + board.turn]) * 500; // Rooks
-    score -= _popcnt64(board.pieceBoards[ROOK + !board.turn]) * 500;
-    score += _popcnt64(board.pieceBoards[QUEEN + board.turn]) * 900; // Queens
-    score -= _popcnt64(board.pieceBoards[QUEEN + !board.turn]) * 900;
-
-    return score;
-}
-
 void Search::updateHistory(uint32_t move, int32_t bonus) {
     const int MAX_HISTORY = MATE_SCORE;
 	int clamped_bonus = std::clamp(bonus, -MAX_HISTORY, MAX_HISTORY); // Ensure the bonus is within bounds
