@@ -1,4 +1,5 @@
 #include "Search.hpp"
+#include "NNUE.hpp"
 using namespace Search;
 
 namespace Search {
@@ -75,7 +76,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
 
     // Initialize evaluation score
     int32_t eval = -INFINITE_SCORE; // Initialize to a very low value
-    int32_t staticEval = evalBoard(board);
+    int32_t staticEval = NNUE::evalBoard(board);
     if (staticEval >= beta) return beta;
     if (staticEval > alpha) alpha = staticEval;
     eval = staticEval; // Start with static evaluation since we are not forced to play a capture
@@ -142,7 +143,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     // Check for transposition table entry (not allowed in root search node)
     uint32_t hashMove = 0;
     TTEntry *entry = TT::get(board.key);
-    if (depth != MAX_DEPTH) {
+    if (!isPvNode) {
         if (entry) {
 
             // Only use the entry if it is good enough for the current search depth
@@ -160,7 +161,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     }
 
     // Get metadata for the current node
-    int32_t staticEval = evalBoard(board);
+    //int32_t staticEval = NNUE::evalBoard(board);
     bool inCheck = board.kingIsAttacked(board.turn);
     bool pawnEndgame = false;
     for (int i = KNIGHT + WHITE; i <= QUEEN + BLACK; i++) {

@@ -26,7 +26,7 @@ void Board::setStartingPos() {
 
     // Initialize mailbox
     for (int i = 0; i < 64; ++i) {
-        mailbox[i] = 12; // Initialize mailbox to empty
+        mailbox[i] = EMPTY; // Initialize mailbox to empty
         for (int j = 0; j < 12; j++) {
             if (pieceBoards[j] & (1ULL << i)) mailbox[i] = j;
         }

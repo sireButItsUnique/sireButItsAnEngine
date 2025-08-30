@@ -15,5 +15,6 @@
 #include <cmath>
 #include <random>
 #include <cstring>
+#include <fstream>
 #include "fast.hpp"
 using namespace std;

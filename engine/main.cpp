@@ -5,6 +5,7 @@
 #include "MoveGen.hpp"
 #include "Search.hpp"
 #include "Hash.hpp"
+#include "NNUE.hpp"
 
 string cmd;
 Board board;
@@ -13,6 +14,7 @@ fast::lvector<uint64_t> threeFoldReps;
 int main(int argc, char *argv[]) {
     MoveGen::init(); // Initialize ray attacks and lookup tables
     Zobrist::init(); // Initialize Zobrist hashing tables
+    NNUE::init(); // Initialize NNUE network
 
     // Run benchmark
     if (argc == 2 && std::string(argv[1]) == "bench") {
@@ -211,7 +213,7 @@ int main(int argc, char *argv[]) {
             for (uint32_t move : moves) {
                 cout << Move::toAlgebra(move) << " ";
             }
-            cout << endl;
+            cout << endl << "Static: " << NNUE::evalBoard(board) << endl;
         }
     }
 }

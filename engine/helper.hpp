@@ -14,6 +14,7 @@ int FENIDX_TO_SQUARE(int idx);
 #define ROOK 6
 #define QUEEN 8
 #define KING 10
+#define EMPTY 12
 
 #define WHITE false
 #define BLACK true
