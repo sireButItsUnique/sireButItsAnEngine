@@ -1,4 +1,9 @@
 #include "NNUE.hpp"
+#include "incbin.h"
+
+extern "C" {
+	INCBIN(network_weights, "engine/network_data.bin");
+}
 
 namespace NNUE {
     int16_t acc_weights[INPUT_SIZE][ACC_SIZE];
@@ -9,12 +14,14 @@ namespace NNUE {
 }
 
 void NNUE::init() {
-    ifstream file("engine/network_data.bin", ios::binary);
-
-    file.read((char*)(acc_weights), sizeof(acc_weights));
-    file.read((char*)(acc_bias), sizeof(acc_bias));
-    file.read((char*)(out_weights), sizeof(out_weights));
-    file.read((char*)(out_bias), sizeof(out_bias));
+    char *ptr = (char *)gnetwork_weightsData;
+	memcpy(acc_weights, ptr, sizeof(acc_weights));
+	ptr += sizeof(acc_weights);
+	memcpy(acc_bias, ptr, sizeof(acc_bias));
+	ptr += sizeof(acc_bias);
+	memcpy(out_weights, ptr, sizeof(out_weights));
+	ptr += sizeof(out_weights);
+	memcpy(&out_bias, ptr, sizeof(out_bias));
 }
 
 int32_t NNUE::evalBoard(Board& board) {
