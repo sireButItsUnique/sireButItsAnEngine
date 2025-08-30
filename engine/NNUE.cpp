@@ -44,10 +44,18 @@ int32_t NNUE::evalBoard(Board& board) {
 
     // Compute hidden layer
     int32_t acc[2 * ACC_SIZE] = {0};
-    for (int i = 0; i < INPUT_SIZE; i++) {
-        if (winput[i]) for (int j = 0; j < ACC_SIZE; j++) acc[j] += acc_weights[i][j];
-        if (binput[i]) for (int j = 0; j < ACC_SIZE; j++) acc[j + ACC_SIZE] += acc_weights[i][j];
+    if (board.turn == WHITE) {
+        for (int i = 0; i < INPUT_SIZE; i++) {
+            if (winput[i]) for (int j = 0; j < ACC_SIZE; j++) acc[j] += acc_weights[i][j];
+            if (binput[i]) for (int j = 0; j < ACC_SIZE; j++) acc[j + ACC_SIZE] += acc_weights[i][j];
+        }
+    } else {
+        for (int i = 0; i < INPUT_SIZE; i++) {
+            if (binput[i]) for (int j = 0; j < ACC_SIZE; j++) acc[j] += acc_weights[i][j];
+            if (winput[i]) for (int j = 0; j < ACC_SIZE; j++) acc[j + ACC_SIZE] += acc_weights[i][j];
+        }
     }
+    
     for (int i = 0; i < ACC_SIZE; i++) {
         acc[i] += acc_bias[i];
         acc[i + ACC_SIZE] += acc_bias[i]; 
