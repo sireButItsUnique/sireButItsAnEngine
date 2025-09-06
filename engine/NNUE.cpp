@@ -27,8 +27,7 @@ void NNUE::init() {
 int32_t NNUE::evalBoard(Board& board) {
     
     // Prepare input layers
-    int16_t winput[INPUT_SIZE] = {0};
-    int16_t binput[INPUT_SIZE] = {0};
+    int32_t acc[2 * ACC_SIZE] = {0};
     for (int square = 0; square < 64; square++) {
         if (board.mailbox[square] != EMPTY) {
             // Get piece
@@ -44,25 +43,21 @@ int32_t NNUE::evalBoard(Board& board) {
             bidx *= 64;
 
             // add square offset (flip board if black)
-            winput[widx + square] = 1;
-            binput[bidx + (square ^ 56)] = 1;
+            widx += square;
+            bidx += (square ^ 56);
+            
+            // calc acc layer immediately to save time and memory
+            if (board.turn == WHITE) {
+                for (int j = 0; j < ACC_SIZE; j++) acc[j] += acc_weights[widx][j];
+                for (int j = 0; j < ACC_SIZE; j++) acc[j + ACC_SIZE] += acc_weights[bidx][j];
+            } else {
+                for (int j = 0; j < ACC_SIZE; j++) acc[j] += acc_weights[bidx][j];
+                for (int j = 0; j < ACC_SIZE; j++) acc[j + ACC_SIZE] += acc_weights[widx][j];
+            }
         }
     }
 
-    // Compute hidden layer
-    int32_t acc[2 * ACC_SIZE] = {0};
-    if (board.turn == WHITE) {
-        for (int i = 0; i < INPUT_SIZE; i++) {
-            if (winput[i]) for (int j = 0; j < ACC_SIZE; j++) acc[j] += acc_weights[i][j];
-            if (binput[i]) for (int j = 0; j < ACC_SIZE; j++) acc[j + ACC_SIZE] += acc_weights[i][j];
-        }
-    } else {
-        for (int i = 0; i < INPUT_SIZE; i++) {
-            if (binput[i]) for (int j = 0; j < ACC_SIZE; j++) acc[j] += acc_weights[i][j];
-            if (winput[i]) for (int j = 0; j < ACC_SIZE; j++) acc[j + ACC_SIZE] += acc_weights[i][j];
-        }
-    }
-    
+    // Finish computing hidden layer
     for (int i = 0; i < ACC_SIZE; i++) {
         acc[i] += acc_bias[i];
         acc[i + ACC_SIZE] += acc_bias[i]; 
