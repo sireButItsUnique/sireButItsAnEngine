@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
             // iterative deepening
             else {
                 Search::initSearch(timeCap, threeFoldReps);
-                depth = 0;
+                depth = 1;
                 for ( ; depth < 16; ++depth) {
                     Search::MAX_DEPTH = depth;
                     uint32_t tmp = Search::bestMoves(board, depth, -INFINITE_SCORE, INFINITE_SCORE, moveHistory, true);
