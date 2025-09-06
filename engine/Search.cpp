@@ -105,6 +105,9 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
 
 int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, vector<vector<uint32_t>>& PV, bool isPvNode) {
 
+    // Leaf node, q search
+    if (depth <= 0) return Search::finishCaptures(board, alpha, beta, 0);
+    
     // Time management
     if (Search::ABORT_SEARCH) return 0;
     if ((NODE_COUNT & 1023) == 0) {
@@ -225,8 +228,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
 
         // Evaluate the new position
         int32_t score; // Negative because score is from opponent's perspective
-        if (depth > 0) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV, childIsPv); // Negate for minimax
-        else score = -Search::finishCaptures(newBoard, -beta, -alpha, 0); // Leaf node evaluation
+        score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV, childIsPv); // Negate for minimax
 
         // Time management here so we don't write bs into transposition table (thanks sebastian lague)
         if (Search::ABORT_SEARCH) return 0;
