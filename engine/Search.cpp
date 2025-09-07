@@ -155,7 +155,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     bool nearMate = false;
     if (abs(alpha) > MATE_SCORE - 100 || abs(beta) > MATE_SCORE - 100) nearMate = true;
 
-    // Reverse frutility pruning
+    // Reverse frutility pruning dw
     // if (!inCheck && !isPvNode && !nearMate) {
     //     if (staticEval >= beta + (150 * depth)) {
     //         return staticEval - (150 * depth); // Prune the branch
