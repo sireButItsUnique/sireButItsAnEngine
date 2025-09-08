@@ -162,13 +162,14 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         }
     }
 
-    // // Null move pruning
-    // if (!inCheck && !pawnEndgame && staticEval >= beta) {
-    //     board.turn = !board.turn; // Switch turn for null move
-    //     int32_t nullMoveScore = -Search::bestMoves(board, max(0, depth - 4), -beta, -alpha, PV, false); // Null move search
-    //     board.turn = !board.turn; // Switch back turn
-    //     if (nullMoveScore >= beta) return nullMoveScore; // Prune the branch if null move score is too high
-    // }
+    // Null move pruning
+    if (!inCheck && !pawnEndgame && staticEval >= beta) {
+        board.makeNullMove(); // Switch turn for null move
+        int32_t nullMoveScore = -Search::bestMoves(board, max(0, depth - 4), -beta, -alpha, PV, false); // Null move search
+        if (nullMoveScore >= beta) return nullMoveScore; // Prune the branch if null move score is too high
+
+        board.makeNullMove(); // Switch back turn
+    }
 
     // Generate moves and order them
     fast::vector<uint32_t> moves;

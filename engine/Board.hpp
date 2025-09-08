@@ -40,6 +40,11 @@ public:
 	void movePiece(uint32_t move);
 
 	/**
+	 * @brief makes a null move (switches turn without making any move)
+	 */
+	void makeNullMove();
+
+	/**
 	 * @brief checks if the square is attacked by the opponent
 	 *
 	 * @param square square to check

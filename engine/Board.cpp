@@ -309,6 +309,14 @@ void Board::movePiece(uint32_t move) {
     }
 }
 
+void Board::makeNullMove() {
+    this->turn = !this->turn; // Switch turn
+
+    // Update zobrist key
+    key ^= Zobrist::TURN[!this->turn];
+    key ^= Zobrist::TURN[this->turn];
+}
+
 uint64_t Board::getZobristKey() {
     uint64_t key = 0;
     for (int i = 0; i < 12; ++i) {
