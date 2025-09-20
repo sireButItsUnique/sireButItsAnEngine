@@ -229,7 +229,12 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
 
         // Evaluate the new position
         int32_t score; // Negative because score is from opponent's perspective
-        score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV, childIsPv); // Negate for minimax
+        if (!idx) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV, childIsPv); // Negate for minimax
+        else {
+            score = -Search::bestMoves(newBoard, depth - 1, -alpha - 1, -alpha, PV, childIsPv);
+            if (score > alpha && score < beta) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV, childIsPv); // Full re-search
+        }
+        
 
         // Time management here so we don't write bs into transposition table (thanks sebastian lague)
         if (Search::ABORT_SEARCH) return 0;
