@@ -33,6 +33,11 @@ namespace Search {
     extern int MAX_DEPTH;
 
     /**
+     * @brief Inits precalculated tables (like reduction table)
+     */
+    void init();
+
+    /**
      * @brief Initializes the search parameters.
      *
      * @param TIME_LIMIT The time limit for the search in milliseconds.

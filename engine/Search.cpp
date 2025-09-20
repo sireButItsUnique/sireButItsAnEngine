@@ -9,6 +9,7 @@ namespace Search {
     int MAX_DEPTH;
     bool ABORT_SEARCH; // Flag to abort search if needed
     fast::lvector<uint64_t> threeFoldReps;
+    int reductions[250][64]; // Reduction table for late move reductions
 
     // Standard move ordering stuff
     uint32_t killer[64][2]; // Killer moves for each depth
@@ -23,6 +24,16 @@ namespace Search {
         {0, 0, 0, 0, 0, 0, 0}, // Taking a king (should never happen)
         {0, 0, 0, 0, 0, 0, 0} // No Piece
     };
+}
+
+void Search::init() {
+    for (int idx = 0; idx < 250; idx++) {
+        for (int depth = 0; depth < 64; depth++) {
+            double reduction = 0.77 + log(idx) * (log(depth) / 2.36);
+            reductions[idx][depth] = floor(reduction);
+            reductions[idx][depth] = max(reductions[idx][depth], 1);
+        }
+    }
 }
 
 void Search::initSearch(int64_t timeLimit, fast::lvector<uint64_t> threeFoldReps) {
@@ -231,7 +242,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         int32_t score; // Negative because score is from opponent's perspective
         if (!idx) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV, childIsPv); // Negate for minimax
         else {
-            score = -Search::bestMoves(newBoard, depth - 1, -alpha - 1, -alpha, PV, childIsPv);
+            score = -Search::bestMoves(newBoard, depth - Search::reductions[idx][depth], -alpha - 1, -alpha, PV, childIsPv);
             if (score > alpha && score < beta) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV, childIsPv); // Full re-search
         }
         
