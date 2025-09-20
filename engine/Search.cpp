@@ -242,8 +242,8 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         int32_t score; // Negative because score is from opponent's perspective
         if (!idx) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV, childIsPv); // Negate for minimax
         else {
-            score = -Search::bestMoves(newBoard, depth - 1, -alpha - 1, -alpha, PV, childIsPv);
-            if (score > alpha && score < beta) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV, childIsPv); // Full re-search
+            score = -Search::bestMoves(newBoard, depth - Search::reductions[idx][depth], -alpha - 1, -alpha, PV, childIsPv);
+            if (score > alpha) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV, childIsPv); // Full re-search
         }
         
 
