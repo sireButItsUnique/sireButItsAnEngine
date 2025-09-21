@@ -24,7 +24,7 @@ void NNUE::init() {
 	memcpy(&out_bias, ptr, sizeof(out_bias));
 }
 
-void NNUE::initAccBias(int32_t acc[2 * ACC_SIZE]) {
+void NNUE::initAccBias(int32_t (&acc)[2 * ACC_SIZE]) {
     memset(acc, 0, sizeof(acc)); // Initialize acc to zero
     for (int i = 0; i < ACC_SIZE; i++) {
         acc[i] += acc_bias[i];
@@ -32,7 +32,7 @@ void NNUE::initAccBias(int32_t acc[2 * ACC_SIZE]) {
     }
 }
 
-int32_t NNUE::evalBoardFast(Board& board, int32_t acc[2 * ACC_SIZE], int16_t accMailbox[64]) {
+int32_t NNUE::evalBoardFast(Board& board, int32_t (&acc)[2 * ACC_SIZE], int16_t (&accMailbox)[64]) {
     
     // Update acc layer based on changes from last move
     for (int square = 0; square < 64; square++) {
@@ -61,33 +61,36 @@ int32_t NNUE::evalBoardFast(Board& board, int32_t acc[2 * ACC_SIZE], int16_t acc
             bidxNew += (square ^ 56);
             widxOld += square;
             bidxOld += (square ^ 56);
-            
+
             // calc acc layer immediately to save time and memory -> remove old piece, add new piece
             if (board.turn == WHITE) {
                 for (int j = 0; j < ACC_SIZE; j++) {
-                    if (accMailbox[square] != EMPTY) {
+                    if (accMailbox[square] < EMPTY) {
                         acc[j] -= acc_weights[widxOld][j];
                         acc[j + ACC_SIZE] -= acc_weights[bidxOld][j];
                     }
 
-                    if (board.mailbox[square] != EMPTY) {
+                    if (board.mailbox[square] < EMPTY) {
                         acc[j] += acc_weights[widxNew][j];
                         acc[j + ACC_SIZE] += acc_weights[bidxNew][j];   
                     }
                 }
             } else {
                 for (int j = 0; j < ACC_SIZE; j++) {
-                    if (accMailbox[square] != EMPTY) {
+                    if (accMailbox[square] < EMPTY) {
                         acc[j] -= acc_weights[bidxOld][j];
                         acc[j + ACC_SIZE] -= acc_weights[widxOld][j];
                     }
                     
-                    if (board.mailbox[square] != EMPTY) {
+                    if (board.mailbox[square] < EMPTY) {
                         acc[j] += acc_weights[bidxNew][j];
                         acc[j + ACC_SIZE] += acc_weights[widxNew][j];
                     }
                 }
             }
+
+            // Update accMailbox
+            accMailbox[square] = board.mailbox[square];
         }
     }
 
@@ -102,9 +105,23 @@ int32_t NNUE::evalBoardFast(Board& board, int32_t acc[2 * ACC_SIZE], int16_t acc
     output *= SCALE;
     output /= QA * QB;
 
-    // Update accMailbox to current board
-    memcpy(accMailbox, board.mailbox, sizeof(accMailbox));
+    if (output != evalBoard(board)) {
+        cerr << "NNUE fast eval mismatch! Fast: " << output << ", Full: " << evalBoard(board) << endl;
+        board.print();
 
+        cerr << "Board mailbox: \n";
+        for (int row = 7; row >= 0; --row) {
+            for (int col = 0; col < 8; ++col) {
+                cerr << board.mailbox[row * 8 + col] << " ";
+            }
+            cerr << "\n";
+        }
+        cerr << "Acc layer: ";
+        for (int i = 0; i < 2 * ACC_SIZE; ++i) {
+            cerr << acc[i] << " ";
+        }
+        cerr << endl;
+    }
     return output;
 }
 

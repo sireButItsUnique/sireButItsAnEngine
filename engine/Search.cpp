@@ -50,7 +50,8 @@ void Search::initSearch(int64_t timeLimit, fast::lvector<uint64_t> threeFoldReps
     memset(killer, 0, sizeof(killer)); // Initialize killer moves to zero
     memset(history, 0, sizeof(history)); // Initialize history table to zero
 
-    memset(accMailbox, EMPTY, sizeof(accMailbox)); // Initialize accMailbox to EMPTY
+    // Initialize accMailbox to EMPTY
+    for (int i = 0; i < 64; i++) accMailbox[i] = EMPTY;
     NNUE::initAccBias(acc); // Initialize acc layer with bias
 }
 
@@ -124,7 +125,8 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
 int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, vector<vector<uint32_t>>& PV, bool isPvNode) {
 
     // Leaf node, q search
-    if (depth <= 0) return Search::finishCaptures(board, alpha, beta, 0);
+    // if (depth <= 0) return Search::finishCaptures(board, alpha, beta, 0);
+    if (depth <= 0) return NNUE::evalBoardFast(board, acc, accMailbox);
     
     // Time management
     if (Search::ABORT_SEARCH) return 0;
