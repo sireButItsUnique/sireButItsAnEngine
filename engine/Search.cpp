@@ -8,8 +8,12 @@ namespace Search {
     int64_t TIME_LIMIT;
     int MAX_DEPTH;
     bool ABORT_SEARCH; // Flag to abort search if needed
+
+    int REDUCTIONS[250][64]; // Reduction table for late move reductions
+
     fast::lvector<uint64_t> threeFoldReps;
-    int reductions[250][64]; // Reduction table for late move reductions
+    int32_t acc[2 * ACC_SIZE];
+    int16_t accMailbox[64];
 
     // Standard move ordering stuff
     uint32_t killer[64][2]; // Killer moves for each depth
@@ -30,8 +34,8 @@ void Search::init() {
     for (int idx = 0; idx < 250; idx++) {
         for (int depth = 0; depth < 64; depth++) {
             double reduction = 0.77 + log(idx) * (log(depth) / 2.36);
-            reductions[idx][depth] = floor(reduction);
-            reductions[idx][depth] = max(reductions[idx][depth], 1);
+            REDUCTIONS[idx][depth] = floor(reduction);
+            REDUCTIONS[idx][depth] = max(REDUCTIONS[idx][depth], 1);
         }
     }
 }
@@ -45,6 +49,9 @@ void Search::initSearch(int64_t timeLimit, fast::lvector<uint64_t> threeFoldReps
 
     memset(killer, 0, sizeof(killer)); // Initialize killer moves to zero
     memset(history, 0, sizeof(history)); // Initialize history table to zero
+
+    memset(accMailbox, EMPTY, sizeof(accMailbox)); // Initialize accMailbox to EMPTY
+    NNUE::initAccBias(acc); // Initialize acc layer with bias
 }
 
 void Search::updateHistory(uint32_t move, int32_t bonus) {
@@ -68,7 +75,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
 
     // Initialize evaluation score
     int32_t eval = -INFINITE_SCORE; // Initialize to a very low value
-    int32_t staticEval = NNUE::evalBoard(board);
+    int32_t staticEval = NNUE::evalBoardFast(board, acc, accMailbox);
     if (staticEval >= beta) return beta;
     if (staticEval > alpha) alpha = staticEval;
     eval = staticEval; // Start with static evaluation since we are not forced to play a capture
@@ -156,7 +163,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     }
 
     // Get metadata for the current node
-    int32_t staticEval = NNUE::evalBoard(board);
+    int32_t staticEval = NNUE::evalBoardFast(board, acc, accMailbox);
     bool inCheck = board.kingIsAttacked(board.turn);
     bool pawnEndgame = false;
     for (int i = KNIGHT + WHITE; i <= QUEEN + BLACK; i++) {
@@ -242,7 +249,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         int32_t score; // Negative because score is from opponent's perspective
         if (!idx) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV, childIsPv); // Negate for minimax
         else {
-            score = -Search::bestMoves(newBoard, depth - Search::reductions[idx][depth], -alpha - 1, -alpha, PV, childIsPv);
+            score = -Search::bestMoves(newBoard, depth - Search::REDUCTIONS[idx][depth], -alpha - 1, -alpha, PV, childIsPv);
             if (score > alpha) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV, childIsPv); // Full re-search
         }
         

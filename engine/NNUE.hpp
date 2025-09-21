@@ -19,5 +19,9 @@ namespace NNUE {
 
     void init();
 
+    void initAccBias(int32_t acc[]);
+
+    int32_t evalBoardFast(Board& board, int32_t acc[], int16_t accMailbox[]);
+
     int32_t evalBoard(Board& board);
 }
