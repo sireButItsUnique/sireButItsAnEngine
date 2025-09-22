@@ -32,96 +32,65 @@ void NNUE::initAccBias(int32_t (&acc)[2 * ACC_SIZE]) {
     }
 }
 
-int32_t NNUE::evalBoardFast(Board& board, int32_t (&acc)[2 * ACC_SIZE], int16_t (&accMailbox)[64]) {
+int32_t getWeightIdx(int piece, int square, bool perspective) {
+    int idx = piece / 2; // Get piece
+    if ((piece % 2) != perspective) idx += 6; // Add side offset for opponent's pieces
+    idx *= 64; // Multiply by 64 for correct slots
+    if (perspective) idx += (square ^ 56); // Add square offset (flip board if black)
+    else idx += square;
+    return idx;
+}
+
+int32_t NNUE::evalBoardFast(Board& board, int32_t (&acc)[2 * ACC_SIZE], Board& accBoard) {
     
     // Update acc layer based on changes from last move
+    int16_t* accMailbox = accBoard.mailbox;
     for (int square = 0; square < 64; square++) {
         if (board.mailbox[square] != accMailbox[square]) {
-            
-            // Get piece
-            int widxNew = board.mailbox[square] / 2; 
-            int bidxNew = board.mailbox[square] / 2; 
-            int widxOld = accMailbox[square] / 2; 
-            int bidxOld = accMailbox[square] / 2; 
 
-            // Add side offset for opp's pieces
-            if ((board.mailbox[square] % 2) == BLACK) widxNew += 6; 
-            if ((board.mailbox[square] % 2) == WHITE) bidxNew += 6;
-            if ((accMailbox[square] % 2) == BLACK) widxOld += 6; 
-            if ((accMailbox[square] % 2) == WHITE) bidxOld += 6;
-
-            // Multiply by 64 for correct slots
-            widxNew *= 64;
-            bidxNew *= 64;
-            widxOld *= 64;
-            bidxOld *= 64;
-
-            // add square offset (flip board if black)
-            widxNew += square;
-            bidxNew += (square ^ 56);
-            widxOld += square;
-            bidxOld += (square ^ 56);
-
-            // calc acc layer immediately to save time and memory -> remove old piece, add new piece
-            if (board.turn == WHITE) {
-                for (int j = 0; j < ACC_SIZE; j++) {
-                    if (accMailbox[square] < EMPTY) {
-                        acc[j] -= acc_weights[widxOld][j];
-                        acc[j + ACC_SIZE] -= acc_weights[bidxOld][j];
-                    }
-
-                    if (board.mailbox[square] < EMPTY) {
-                        acc[j] += acc_weights[widxNew][j];
-                        acc[j + ACC_SIZE] += acc_weights[bidxNew][j];   
-                    }
-                }
-            } else {
-                for (int j = 0; j < ACC_SIZE; j++) {
-                    if (accMailbox[square] < EMPTY) {
-                        acc[j] -= acc_weights[bidxOld][j];
-                        acc[j + ACC_SIZE] -= acc_weights[widxOld][j];
-                    }
-                    
-                    if (board.mailbox[square] < EMPTY) {
-                        acc[j] += acc_weights[bidxNew][j];
-                        acc[j + ACC_SIZE] += acc_weights[widxNew][j];
-                    }
+            // remove old piece
+            for (int j = 0; j < ACC_SIZE; j++) {
+                if (accMailbox[square] < EMPTY) {
+                    acc[j] -= acc_weights[getWeightIdx(accMailbox[square], square, WHITE)][j];
+                    acc[j + ACC_SIZE] -= acc_weights[getWeightIdx(accMailbox[square], square, BLACK)][j];
                 }
             }
 
-            // Update accMailbox
-            accMailbox[square] = board.mailbox[square];
+            // add new piece
+            for (int j = 0; j < ACC_SIZE; j++) {
+                if (board.mailbox[square] < EMPTY) {
+                    acc[j] += acc_weights[getWeightIdx(board.mailbox[square], square, WHITE)][j];
+                    acc[j + ACC_SIZE] += acc_weights[getWeightIdx(board.mailbox[square], square, BLACK)][j];
+                }
+            }
         }
     }
 
     // Compute output layer
     int32_t output = 0;
-    for (int i = 0; i < ACC_SIZE * 2; i++) {
-        int16_t input = clamp(acc[i], 0, QA);
-        output += (input * input) * out_weights[i][0];
+    if (board.turn == WHITE) {
+        for (int i = 0; i < ACC_SIZE * 2; i++) {
+            int16_t input = clamp(acc[i], 0, QA);
+            output += (input * input) * out_weights[i][0];
+        }
+    } else {
+        for (int i = ACC_SIZE; i < ACC_SIZE * 2; i++) {
+            int16_t input = clamp(acc[i], 0, QA);
+            output += (input * input) * out_weights[i - ACC_SIZE][0];
+        }
+        for (int i = 0; i < ACC_SIZE; i++) {
+            int16_t input = clamp(acc[i], 0, QA);
+            output += (input * input) * out_weights[i + ACC_SIZE][0];
+        }
     }
+    
     output /= QA;
     output += out_bias[0];
     output *= SCALE;
     output /= QA * QB;
 
-    if (output != evalBoard(board)) {
-        cerr << "NNUE fast eval mismatch! Fast: " << output << ", Full: " << evalBoard(board) << endl;
-        board.print();
-
-        cerr << "Board mailbox: \n";
-        for (int row = 7; row >= 0; --row) {
-            for (int col = 0; col < 8; ++col) {
-                cerr << board.mailbox[row * 8 + col] << " ";
-            }
-            cerr << "\n";
-        }
-        cerr << "Acc layer: ";
-        for (int i = 0; i < 2 * ACC_SIZE; ++i) {
-            cerr << acc[i] << " ";
-        }
-        cerr << endl;
-    }
+    // Update accBoard to current board
+    accBoard = board;
     return output;
 }
 
@@ -131,33 +100,11 @@ int32_t NNUE::evalBoard(Board& board) {
     int32_t acc[2 * ACC_SIZE] = {0};
     for (int square = 0; square < 64; square++) {
         if (board.mailbox[square] != EMPTY) {
-            // Get piece
-            int widx = board.mailbox[square] / 2; 
-            int bidx = board.mailbox[square] / 2; 
 
-            // Add side offset for opp's pieces
-            if ((board.mailbox[square] % 2) == BLACK) widx += 6; 
-            if ((board.mailbox[square] % 2) == WHITE) bidx += 6;
-
-            // Multiply by 64 for correct slots
-            widx *= 64;
-            bidx *= 64;
-
-            // add square offset (flip board if black)
-            widx += square;
-            bidx += (square ^ 56);
-            
             // calc acc layer immediately to save time and memory
-            if (board.turn == WHITE) {
-                for (int j = 0; j < ACC_SIZE; j++) {
-                    acc[j] += acc_weights[widx][j];
-                    acc[j + ACC_SIZE] += acc_weights[bidx][j];
-                }
-            } else {
-                for (int j = 0; j < ACC_SIZE; j++) {
-                    acc[j] += acc_weights[bidx][j];
-                    acc[j + ACC_SIZE] += acc_weights[widx][j];
-                }
+            for (int j = 0; j < ACC_SIZE; j++) {
+                acc[j] += acc_weights[getWeightIdx(board.mailbox[square], square, WHITE)][j];
+                acc[j + ACC_SIZE] += acc_weights[getWeightIdx(board.mailbox[square], square, BLACK)][j];
             }
         }
     }
@@ -170,9 +117,20 @@ int32_t NNUE::evalBoard(Board& board) {
 
     // Compute output layer
     int32_t output = 0;
-    for (int i = 0; i < ACC_SIZE * 2; i++) {
-        int16_t input = clamp(acc[i], 0, QA);
-        output += (input * input) * out_weights[i][0];
+    if (board.turn == WHITE) {
+        for (int i = 0; i < ACC_SIZE * 2; i++) {
+            int16_t input = clamp(acc[i], 0, QA);
+            output += (input * input) * out_weights[i][0];
+        }
+    } else {
+        for (int i = ACC_SIZE; i < ACC_SIZE * 2; i++) {
+            int16_t input = clamp(acc[i], 0, QA);
+            output += (input * input) * out_weights[i - ACC_SIZE][0];
+        }
+        for (int i = 0; i < ACC_SIZE; i++) {
+            int16_t input = clamp(acc[i], 0, QA);
+            output += (input * input) * out_weights[i + ACC_SIZE][0];
+        }
     }
     output /= QA;
     output += out_bias[0];

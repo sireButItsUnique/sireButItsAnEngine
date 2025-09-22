@@ -13,7 +13,7 @@ namespace Search {
 
     fast::lvector<uint64_t> threeFoldReps;
     int32_t acc[2 * ACC_SIZE];
-    int16_t accMailbox[64];
+    Board& accBoard = *(new Board());
 
     // Standard move ordering stuff
     uint32_t killer[64][2]; // Killer moves for each depth
@@ -50,8 +50,9 @@ void Search::initSearch(int64_t timeLimit, fast::lvector<uint64_t> threeFoldReps
     memset(killer, 0, sizeof(killer)); // Initialize killer moves to zero
     memset(history, 0, sizeof(history)); // Initialize history table to zero
 
-    // Initialize accMailbox to EMPTY
-    for (int i = 0; i < 64; i++) accMailbox[i] = EMPTY;
+    // Initialize accBoard to empty board
+    accBoard = Board();
+    accBoard.setFenPos("8/8/8/8/8/8/8/8", "w", "-", "-");
     NNUE::initAccBias(acc); // Initialize acc layer with bias
 }
 
@@ -76,7 +77,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
 
     // Initialize evaluation score
     int32_t eval = -INFINITE_SCORE; // Initialize to a very low value
-    int32_t staticEval = NNUE::evalBoardFast(board, acc, accMailbox);
+    int32_t staticEval = NNUE::evalBoardFast(board, acc, accBoard);
     if (staticEval >= beta) return beta;
     if (staticEval > alpha) alpha = staticEval;
     eval = staticEval; // Start with static evaluation since we are not forced to play a capture
@@ -125,8 +126,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
 int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, vector<vector<uint32_t>>& PV, bool isPvNode) {
 
     // Leaf node, q search
-    // if (depth <= 0) return Search::finishCaptures(board, alpha, beta, 0);
-    if (depth <= 0) return NNUE::evalBoardFast(board, acc, accMailbox);
+    if (depth <= 0) return Search::finishCaptures(board, alpha, beta, 0);
     
     // Time management
     if (Search::ABORT_SEARCH) return 0;
@@ -165,7 +165,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     }
 
     // Get metadata for the current node
-    int32_t staticEval = NNUE::evalBoardFast(board, acc, accMailbox);
+    int32_t staticEval = NNUE::evalBoardFast(board, acc, accBoard);
     bool inCheck = board.kingIsAttacked(board.turn);
     bool pawnEndgame = false;
     for (int i = KNIGHT + WHITE; i <= QUEEN + BLACK; i++) {
