@@ -191,13 +191,13 @@ int main(int argc, char *argv[]) {
                     }
 
                     // aspiration window search
-                    uint32_t tmpEval;
+                    int32_t tmpEval;
                     while (true) {
                         alpha = max(alpha, -INFINITE_SCORE);
                         beta = min(beta, INFINITE_SCORE);
 
                         // call actual search
-                        tmpEval = Search::bestMoves(board, depth, -INFINITE_SCORE, INFINITE_SCORE, moveHistory, true);
+                        tmpEval = Search::bestMoves(board, depth, alpha, beta, moveHistory, true);
                         if (Search::ABORT_SEARCH) break;
 
                         // adjust window if out of bounds
