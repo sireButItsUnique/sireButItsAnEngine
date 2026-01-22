@@ -177,12 +177,46 @@ int main(int argc, char *argv[]) {
                 Search::initSearch(timeCap, threeFoldReps);
                 depth = 1;
                 for ( ; depth < 16; ++depth) {
+
+                    // set search depth
                     Search::MAX_DEPTH = depth;
-                    uint32_t tmp = Search::bestMoves(board, depth, -INFINITE_SCORE, INFINITE_SCORE, moveHistory, true);
                     
+                    // set up aspiration window
+                    int32_t alpha = -INFINITE_SCORE;
+                    int32_t beta = INFINITE_SCORE;  
+                    int32_t windowSize = 50; // aspiration window size
+                    if (depth >= 3) { // only use aspiration windows from depth 3 onwards
+                        alpha = eval - windowSize;
+                        beta = eval + windowSize;
+                    }
+
+                    // aspiration window search
+                    uint32_t tmpEval;
+                    while (true) {
+                        alpha = max(alpha, -INFINITE_SCORE);
+                        beta = min(beta, INFINITE_SCORE);
+
+                        // call actual search
+                        tmpEval = Search::bestMoves(board, depth, -INFINITE_SCORE, INFINITE_SCORE, moveHistory, true);
+                        if (Search::ABORT_SEARCH) break;
+
+                        // adjust window if out of bounds
+                        if (tmpEval <= alpha) {
+                            windowSize *= 2;
+                            alpha = tmpEval - windowSize;
+                        } else if (tmpEval >= beta) {
+                            windowSize *= 2;
+                            beta = tmpEval + windowSize;
+                        } else {
+                            break; // within bounds, move on to next depth
+                        }
+                    }
                     if (Search::ABORT_SEARCH) break;
+                    
+                    
+                    // organize info post search
                     move = moveHistory[depth][0];
-                    eval = tmp;
+                    eval = tmpEval;
                     double time_taken = 1e-9 * chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - start).count();
                     cout << "info depth " << depth;
                     cout << " score cp " << eval;

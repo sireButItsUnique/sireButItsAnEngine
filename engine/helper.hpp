@@ -36,8 +36,8 @@ int FENIDX_TO_SQUARE(int idx);
 #define WEST 6
 #define NORTHWEST 7
 
-#define MATE_SCORE 4e7
-#define INFINITE_SCORE 9e7
+#define MATE_SCORE (INT32_MAX / 2)
+#define INFINITE_SCORE (INT32_MAX - 1000)
 
 #define TT_EXACT 0
 #define TT_LOWER 1
