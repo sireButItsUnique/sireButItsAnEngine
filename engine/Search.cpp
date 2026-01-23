@@ -116,7 +116,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
     }
 
     // Return the evaluated score
-    if (abs(eval) > MATE_SCORE - 100) {
+    if (abs(eval) > MATE_SITUATION) {
         if (eval > 0) return eval - 1;
         else return eval + 1;
     }
@@ -173,7 +173,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     }
     pawnEndgame = !pawnEndgame;
     bool nearMate = false;
-    if (abs(alpha) > MATE_SCORE - 100 || abs(beta) > MATE_SCORE - 100) nearMate = true;
+    if (abs(alpha) > MATE_SITUATION || abs(beta) > MATE_SITUATION) nearMate = true;
 
     // Reverse frutility pruning
     if (!inCheck && !isPvNode && !nearMate) {
@@ -306,7 +306,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     if (illegals == moves.size()) {
         eval = -MATE_SCORE;
     }
-    else if (abs(eval) > MATE_SCORE - 100) {
+    else if (abs(eval) > MATE_SITUATION) {
         if (eval > 0) eval--;
         else eval++;
     }

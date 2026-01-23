@@ -38,6 +38,7 @@ int FENIDX_TO_SQUARE(int idx);
 
 #define MATE_SCORE (INT32_MAX / 2)
 #define INFINITE_SCORE (INT32_MAX - 1000)
+#define MATE_SITUATION (MATE_SCORE - 500)
 
 #define TT_EXACT 0
 #define TT_LOWER 1
