@@ -63,15 +63,28 @@ namespace Search {
     int32_t finishCaptures(Board& board, int32_t alpha, int32_t beta, int depth);
 
     /**
+     * @brief Checks for singular extension condition.
+     *
+     * @param board The current board state.
+     * @param depth The search depth.
+     * @param alpha The highest score that the cur player is guranteed
+     * @param beta The highest score that the opp player is guranteed. If the score is greater than beta, the search can be pruned since from opp's POV it will be worse than beta.
+     * @param ply The current ply
+     * @return An integer score representing the evaluation of the board, excluding the best move
+     */
+    int32_t singularExtensionCheck(Board& board, int depth, int ply, int32_t alpha, int32_t beta);
+
+    /**
      * @brief Finds the best moves for the current player.
      *
      * @param board The current board state.
      * @param depth The search depth.
+     * @param ply The current ply
      * @param alpha The highest score that the cur player is guranteed
      * @param beta The highest score that the opp player is guranteed. If the score is greater than beta, the search can be pruned since from opp's POV it will be worse than beta.
      * @param PV Stores the best moves
      * @param isPvNode Indicates if the current node is an accurate pv node
      * @return An integer score representing the evaluation of the best move.
      */
-    int32_t bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, vector<vector<uint32_t>>& PV, bool isPvNode);
+    int32_t bestMoves(Board& board, int depth, int ply, int32_t alpha, int32_t beta, vector<vector<uint32_t>>& PV, bool isPvNode);
 }

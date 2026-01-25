@@ -12,6 +12,8 @@ namespace Search {
     int REDUCTIONS[250][64]; // Reduction table for late move reductions
 
     fast::lvector<uint64_t> threeFoldReps;
+
+    // Accumulation cache for NNUE 
     int32_t acc[2 * ACC_SIZE];
     Board& accBoard = *(new Board());
 
@@ -28,6 +30,9 @@ namespace Search {
         {0, 0, 0, 0, 0, 0, 0}, // Taking a king (should never happen)
         {0, 0, 0, 0, 0, 0, 0} // No Piece
     };
+
+    // Singular extension stuff
+    uint32_t excludedMove[64]; // Move to exclude for singular extension
 }
 
 void Search::init() {
@@ -49,6 +54,7 @@ void Search::initSearch(int64_t timeLimit, fast::lvector<uint64_t> threeFoldReps
 
     memset(killer, 0, sizeof(killer)); // Initialize killer moves to zero
     memset(history, 0, sizeof(history)); // Initialize history table to zero
+    memset(excludedMove, 0, sizeof(excludedMove)); // Initialize excluded moves to zero
 
     // Initialize accBoard to empty board
     accBoard = Board();
@@ -123,7 +129,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
     return eval;
 }
 
-int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, vector<vector<uint32_t>>& PV, bool isPvNode) {
+int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32_t beta, vector<vector<uint32_t>>& PV, bool isPvNode) {
 
     // Leaf node, q search
     if (depth <= 0) return Search::finishCaptures(board, alpha, beta, 0);
@@ -185,7 +191,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     // Null move pruning
     if (!inCheck && !pawnEndgame && staticEval >= beta) {
         board.makeNullMove(); // Switch turn for null move
-        int32_t nullMoveScore = -Search::bestMoves(board, max(0, depth - 4), -beta, -alpha, PV, false); // Null move search
+        int32_t nullMoveScore = -Search::bestMoves(board, max(0, depth - 4), ply + 1, -beta, -alpha, PV, false); // Null move search
         board.makeNullMove(); // Switch back turn
         
         if (nullMoveScore >= beta) return nullMoveScore; // Prune the branch if null move score is too high
@@ -196,7 +202,6 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     fast::vector<pair<int32_t, uint32_t>> scored;
     MoveGen::genMoves(board, moves, board.turn);
     
-    int realDepth = MAX_DEPTH - depth; // depth = how many left, realDepth = how many already done (same realDepth = similar board state)
     bool beatAlpha = false; // Flag to check if we beat alpha in this node
     for (uint32_t move : moves) {
         int32_t score;
@@ -214,8 +219,8 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         // Quiet Moves Ordering
         else {
             score = -10000;
-            if (move == killer[realDepth][0]) score += 1500; // Killer moves
-            if (move == killer[realDepth][1]) score += 1000;
+            if (move == killer[ply][0]) score += 1500; // Killer moves
+            if (move == killer[ply][1]) score += 1000;
             score += history[Move::id(move)]; // Historical value
         }
          
@@ -233,8 +238,29 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
     int illegals = 0;
     for (int idx = 0; idx < scored.size(); ++idx) {
         
-        // Move making shenanigans
+        // Singular extension setup
         uint32_t move = scored[idx].second;
+        // if (move == excludedMove[ply]) continue;
+
+        // if (
+        //     depth >= 8 // Only extend in deeper searches
+        //     && entry != nullptr
+        //     && move == entry->move // Move matches TT best move
+        //     && entry->depth >= depth - 2 // TT depth is decently deep
+        //     && entry->flag != TT_UPPER // Reliable
+        // ) {
+            
+        //     // Might be a "sigular move", try singular extension
+        //     excludedMove[ply] = move;
+        //     int32_t singularBeta = entry->eval - (3 * depth); // How much moves must be worse than the singular move
+        //     int32_t singularScore = -Search::singularExtensionCheck(board, (depth - 1) / 2, ply, singularBeta - 1, singularBeta);
+        //     excludedMove[ply] = 0; // Reset excluded move
+
+        //     // Extend the search depth by 1 if the move is singular
+        //     if (singularScore < singularBeta) depth++;
+        // }
+
+        // Move making shenanigans
         Board newBoard = board; // Create a copy of the board
         newBoard.movePiece(move); // Make the move
         if (newBoard.kingIsAttacked(board.turn)) {
@@ -249,10 +275,10 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
 
         // Evaluate the new position
         int32_t score; // Negative because score is from opponent's perspective
-        if (!idx) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV, childIsPv); // Negate for minimax
+        if (!idx) score = -Search::bestMoves(newBoard, depth - 1, ply + 1, -beta, -alpha, PV, childIsPv); // Negate for minimax
         else {
-            score = -Search::bestMoves(newBoard, depth - Search::REDUCTIONS[idx][depth], -alpha - 1, -alpha, PV, childIsPv);
-            if (score > alpha) score = -Search::bestMoves(newBoard, depth - 1, -beta, -alpha, PV, childIsPv); // Full re-search
+            score = -Search::bestMoves(newBoard, depth - Search::REDUCTIONS[idx][depth], ply + 1, -alpha - 1, -alpha, PV, childIsPv);
+            if (score > alpha) score = -Search::bestMoves(newBoard, depth - 1, ply + 1, -beta, -alpha, PV, childIsPv); // Full re-search
         }
         
 
@@ -263,9 +289,9 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         if (score >= beta) {
 
             // Store killer moves
-            if (!board.moveIsCapture(move) && move != killer[realDepth][0] && move != killer[realDepth][1]) {
-                killer[realDepth][1] = killer[realDepth][0];
-                killer[realDepth][0] = move; // Store the killer move
+            if (!board.moveIsCapture(move) && move != killer[ply][0] && move != killer[ply][1]) {
+                killer[ply][1] = killer[ply][0];
+                killer[ply][0] = move; // Store the killer move
             }
 
             // Update history
@@ -311,7 +337,7 @@ int32_t Search::bestMoves(Board& board, int depth, int32_t alpha, int32_t beta, 
         else eval++;
     }
 
-    // Update transposition table.
+    // Update transposition table
     if (!beatAlpha) TT::set(board.key, eval, depth, bestMove, TT_UPPER);
     else TT::set(board.key, eval, depth, bestMove, TT_EXACT);
 

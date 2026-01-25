@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
 
         for (int depth = 1; depth <= 8; ++depth) {
             Search::MAX_DEPTH = depth;
-            Search::bestMoves(board, depth, -INFINITE_SCORE, INFINITE_SCORE, moveHistory, true);
+            Search::bestMoves(board, depth, 0, -INFINITE_SCORE, INFINITE_SCORE, moveHistory, true);
         }
 
         // outputing the results
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
             if (depth != -1) {
                 Search::initSearch(INFINITE_SCORE, threeFoldReps);
                 Search::MAX_DEPTH = depth;
-                eval = Search::bestMoves(board, depth, -INFINITE_SCORE, INFINITE_SCORE, moveHistory, true);
+                eval = Search::bestMoves(board, depth, 0, -INFINITE_SCORE, INFINITE_SCORE, moveHistory, true);
                 move = moveHistory[depth][0];
             } 
             
@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
                         beta = min(beta, INFINITE_SCORE);
 
                         // call actual search
-                        tmpEval = Search::bestMoves(board, depth, alpha, beta, moveHistory, true);
+                        tmpEval = Search::bestMoves(board, depth, 0, alpha, beta, moveHistory, true);
                         if (Search::ABORT_SEARCH) break;
 
                         // adjust window if out of bounds
