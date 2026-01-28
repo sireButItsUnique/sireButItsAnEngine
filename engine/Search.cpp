@@ -167,9 +167,8 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
                     if (entry->eval <= alpha) return entry->eval; // Worse for sure, we can prune the search
                 }
             }
-
-            hashMove = entry->move; // Get the best move from the transposition table
         }
+        hashMove = entry->move; // Get the best move from the transposition table
     }
 
     // Get metadata for the current node
