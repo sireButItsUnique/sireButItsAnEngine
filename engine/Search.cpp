@@ -84,7 +84,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
     // Initialize evaluation score
     int32_t eval = -INFINITE_SCORE; // Initialize to a very low value
     int32_t staticEval = NNUE::evalBoardFast(board, acc, accBoard);
-    if (staticEval >= beta) return beta;
+    if (staticEval >= beta) return staticEval;
     if (staticEval > alpha) alpha = staticEval;
     eval = staticEval; // Start with static evaluation since we are not forced to play a capture
 
@@ -153,20 +153,22 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
     // Check for transposition table entry (not allowed in root search node)
     uint32_t hashMove = 0;
     TTEntry *entry = TT::get(board.key);
-    if (!isPvNode) {
-        if (entry) {
+    if (entry) {
 
-            // Only use the entry if it is good enough for the current search depth
-            if (entry->depth >= depth) {
+        // Only use the entry if it is good enough for the current search depth
+        if (entry->depth >= depth) {
+
+            // Only return early if not a PV node
+            if (!isPvNode) {
                 if (entry->flag == TT_EXACT) return entry->eval;
                 else if (entry->flag == TT_LOWER) {
                     if (entry->eval >= beta) return entry->eval; // Will never be played, we can prune the search
                 } else if (entry->flag == TT_UPPER) {
                     if (entry->eval <= alpha) return entry->eval; // Worse for sure, we can prune the search
                 }
-
-                hashMove = entry->move; // Get the best move from the transposition table
             }
+
+            hashMove = entry->move; // Get the best move from the transposition table
         }
     }
 
