@@ -131,7 +131,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
     return eval;
 }
 
-int32_t Search::singularSearch(Board& board, int depth, int ply, vector<vector<uint32_t>>& PV, int entryEval, int excludedMove) {
+bool Search::singularSearch(Board& board, int depth, int ply, vector<vector<uint32_t>>& PV, int entryEval, int excludedMove) {
     Search::excludedMove[ply] = excludedMove;
     int32_t singularBeta = entryEval - (3 * depth); // How much moves must be worse than the singular move
     
@@ -140,9 +140,7 @@ int32_t Search::singularSearch(Board& board, int depth, int ply, vector<vector<u
     Search::excludedMove[ply] = 0; // Reset excluded move
     Search::inSingularSearch = false;
 
-    int res = 0;
-    if (singularScore < singularBeta) res = 1;
-    return res;
+    return singularScore < singularBeta;
 }
 
 int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32_t beta, vector<vector<uint32_t>>& PV, bool isPvNode) {
@@ -277,7 +275,8 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
         ) {
             
             // Might be a "singular move", try singular extension
-            extend += Search::singularSearch(board, depth, ply, PV, entry->eval, move); 
+            if (Search::singularSearch(board, depth, ply, PV, entry->eval, move)) extend++; 
+            else if (entry->eval >= beta) extend -= 3;
         }
 
         // Move making shenanigans

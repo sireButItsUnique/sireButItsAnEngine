@@ -63,7 +63,7 @@ namespace Search {
     int32_t finishCaptures(Board& board, int32_t alpha, int32_t beta, int depth);
 
     /**
-     * @brief Finds the best moves for the current player.
+     * @brief Checks if the excluded move is a "singular move" (better than all other moves by a fair bit)
      *
      * @param board The current board state.
      * @param depth The search depth.
@@ -71,9 +71,9 @@ namespace Search {
      * @param PV Stores the best moves
      * @param entryEval The evaluation of the excluded move from the transposition table
      * @param excludedMove The move to exclude from the search (the "singular move")
-     * @return An integer score representing the evaluation excluding the "best move"
+     * @return A boolean indicating whether the excluded move is singular
      */
-    int32_t singularSearch(Board& board, int depth, int ply, vector<vector<uint32_t>>& PV, int entryEval, int excludedMove);
+    bool singularSearch(Board& board, int depth, int ply, vector<vector<uint32_t>>& PV, int entryEval, int excludedMove);
 
     /**
      * @brief Finds the best moves for the current player.
