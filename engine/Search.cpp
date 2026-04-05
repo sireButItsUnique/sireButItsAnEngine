@@ -217,6 +217,7 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
             if (nullMoveScore >= beta) return nullMoveScore; // Prune the branch if null move score is too high
         }
     }
+    Search::inSingularSearch = false; // now, disable this for child nodes so pruning is enabled
 
     // Generate moves and order them
     fast::vector<uint32_t> moves;
