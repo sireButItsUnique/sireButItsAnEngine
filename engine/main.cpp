@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
         Search::initSearch(INFINITE_SCORE, threeFoldReps);
         auto start = chrono::high_resolution_clock::now();
 
-        for (int depth = 1; depth <= 8; ++depth) {
+        for (int depth = 1; depth <= 10; ++depth) {
             Search::MAX_DEPTH = depth;
             Search::bestMoves(board, depth, 0, -INFINITE_SCORE, INFINITE_SCORE, moveHistory, true);
         }

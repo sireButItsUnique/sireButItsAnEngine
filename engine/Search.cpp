@@ -239,27 +239,31 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
     int illegals = 0;
     for (int idx = 0; idx < scored.size(); ++idx) {
         
-        // Singular extension setup
+        // Move node setup
         uint32_t move = scored[idx].second;
-        // if (move == excludedMove[ply]) continue;
+        int32_t extend = 0; // Number of extensions for this node
+        
+        // Singular extension setup
+        if (move == excludedMove[ply]) continue;
 
-        // if (
-        //     depth >= 8 // Only extend in deeper searches
-        //     && entry != nullptr
-        //     && move == entry->move // Move matches TT best move
-        //     && entry->depth >= depth - 2 // TT depth is decently deep
-        //     && entry->flag != TT_UPPER // Reliable
-        // ) {
+        if (
+            excludedMove[ply] == 0 // No move is currently excluded
+            && depth >= 8 // Only extend in deeper searches
+            && entry != nullptr
+            && move == entry->move // Move matches TT best move
+            && entry->depth >= depth - 2 // TT depth is deep
+            && entry->flag != TT_UPPER // Reliable
+        ) {
             
-        //     // Might be a "sigular move", try singular extension
-        //     excludedMove[ply] = move;
-        //     int32_t singularBeta = entry->eval - (3 * depth); // How much moves must be worse than the singular move
-        //     int32_t singularScore = -Search::singularExtensionCheck(board, (depth - 1) / 2, ply, singularBeta - 1, singularBeta);
-        //     excludedMove[ply] = 0; // Reset excluded move
+            // Might be a "sigular move", try singular extension
+            excludedMove[ply] = move;
+            int32_t singularBeta = entry->eval - (3 * depth); // How much moves must be worse than the singular move
+            int32_t singularScore = Search::bestMoves(board, (depth - 1) / 2, ply, singularBeta - 1, singularBeta, PV, isPvNode);
+            excludedMove[ply] = 0; // Reset excluded move
 
-        //     // Extend the search depth by 1 if the move is singular
-        //     if (singularScore < singularBeta) depth++;
-        // }
+            // Extend the search depth by 1 if the move is singular
+            if (singularScore < singularBeta) extend++;
+        }
 
         // Move making shenanigans
         Board newBoard = board; // Create a copy of the board
@@ -276,7 +280,7 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
 
         // Evaluate the new position
         int32_t score; // Negative because score is from opponent's perspective
-        if (!idx) score = -Search::bestMoves(newBoard, depth - 1, ply + 1, -beta, -alpha, PV, childIsPv); // Negate for minimax
+        if (!idx) score = -Search::bestMoves(newBoard, depth - 1 + extend, ply + 1, -beta, -alpha, PV, childIsPv); // Negate for minimax
         else {
             score = -Search::bestMoves(newBoard, depth - Search::REDUCTIONS[idx][depth], ply + 1, -alpha - 1, -alpha, PV, childIsPv);
             if (score > alpha) score = -Search::bestMoves(newBoard, depth - 1, ply + 1, -beta, -alpha, PV, childIsPv); // Full re-search
