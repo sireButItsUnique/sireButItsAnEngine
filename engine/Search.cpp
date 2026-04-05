@@ -33,6 +33,7 @@ namespace Search {
 
     // Singular extension stuff
     uint32_t excludedMove[64]; // Move to exclude for singular extension
+    bool inSingularSearch; // Flag to indicate if we are currently in a singular extension search
 }
 
 void Search::init() {
@@ -51,6 +52,7 @@ void Search::initSearch(int64_t timeLimit, fast::lvector<uint64_t> threeFoldReps
     ABORT_SEARCH = false;
     NODE_COUNT = 0;
     Search::threeFoldReps = threeFoldReps;
+    Search::inSingularSearch = false;
 
     memset(killer, 0, sizeof(killer)); // Initialize killer moves to zero
     memset(history, 0, sizeof(history)); // Initialize history table to zero
@@ -129,6 +131,20 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
     return eval;
 }
 
+int32_t Search::singularSearch(Board& board, int depth, int ply, vector<vector<uint32_t>>& PV, int entryEval, int excludedMove) {
+    Search::excludedMove[ply] = excludedMove;
+    int32_t singularBeta = entryEval - (3 * depth); // How much moves must be worse than the singular move
+    
+    Search::inSingularSearch = true;
+    int32_t singularScore = Search::bestMoves(board, (depth - 1) / 2, ply, singularBeta - 1, singularBeta, PV, false); // Set as non PV to avoid oversearching
+    Search::excludedMove[ply] = 0; // Reset excluded move
+    Search::inSingularSearch = false;
+
+    int res = 0;
+    if (singularScore < singularBeta) res = 1;
+    return res;
+}
+
 int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32_t beta, vector<vector<uint32_t>>& PV, bool isPvNode) {
 
     // Leaf node, q search
@@ -158,8 +174,8 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
         // Only use the entry if it is good enough for the current search depth
         if (entry->depth >= depth) {
 
-            // Only return early if not a PV node
-            if (!isPvNode) {
+            // Can't return early if in PV node or singular search
+            if (!isPvNode && !Search::inSingularSearch) {
                 if (entry->flag == TT_EXACT) return entry->eval;
                 else if (entry->flag == TT_LOWER) {
                     if (entry->eval >= beta) return entry->eval; // Will never be played, we can prune the search
@@ -171,31 +187,35 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
         hashMove = entry->move; // Get the best move from the transposition table
     }
 
-    // Get metadata for the current node
-    int32_t staticEval = NNUE::evalBoardFast(board, acc, accBoard);
-    bool inCheck = board.kingIsAttacked(board.turn);
-    bool pawnEndgame = false;
-    for (int i = KNIGHT + WHITE; i <= QUEEN + BLACK; i++) {
-        pawnEndgame |= board.pieceBoards[i];
-    }
-    pawnEndgame = !pawnEndgame;
-    bool nearMate = false;
-    if (abs(alpha) > MATE_SITUATION || abs(beta) > MATE_SITUATION) nearMate = true;
-
-    // Reverse frutility pruning
-    if (!inCheck && !isPvNode && !nearMate) {
-        if (staticEval >= beta + (100 * depth)) {
-            return staticEval; // Prune the branch
-        }
-    }
-
-    // Null move pruning
-    if (!inCheck && !pawnEndgame && staticEval >= beta) {
-        board.makeNullMove(); // Switch turn for null move
-        int32_t nullMoveScore = -Search::bestMoves(board, max(0, depth - 4), ply + 1, -beta, -alpha, PV, false); // Null move search
-        board.makeNullMove(); // Switch back turn
+    // Lossy stuff
+    if (!Search::inSingularSearch) {
         
-        if (nullMoveScore >= beta) return nullMoveScore; // Prune the branch if null move score is too high
+        // Get metadata for the current node
+        int32_t staticEval = NNUE::evalBoardFast(board, acc, accBoard);
+        bool inCheck = board.kingIsAttacked(board.turn);
+        bool pawnEndgame = false;
+        for (int i = KNIGHT + WHITE; i <= QUEEN + BLACK; i++) {
+            pawnEndgame |= board.pieceBoards[i];
+        }
+        pawnEndgame = !pawnEndgame;
+        bool nearMate = false;
+        if (abs(alpha) > MATE_SITUATION || abs(beta) > MATE_SITUATION) nearMate = true;
+
+        // Reverse frutility pruning
+        if (!inCheck && !isPvNode && !nearMate) {
+            if (staticEval >= beta + (100 * depth)) {
+                return staticEval; // Prune the branch
+            }
+        }
+
+        // Null move pruning
+        if (!inCheck && !pawnEndgame && staticEval >= beta) {
+            board.makeNullMove(); // Switch turn for null move
+            int32_t nullMoveScore = -Search::bestMoves(board, max(0, depth - 4), ply + 1, -beta, -alpha, PV, false); // Null move search
+            board.makeNullMove(); // Switch back turn
+            
+            if (nullMoveScore >= beta) return nullMoveScore; // Prune the branch if null move score is too high
+        }
     }
 
     // Generate moves and order them
@@ -244,10 +264,10 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
         int32_t extend = 0; // Number of extensions for this node
         
         // Singular extension setup
-        if (move == excludedMove[ply]) continue;
+        if (move == Search::excludedMove[ply]) continue;
 
         if (
-            excludedMove[ply] == 0 // No move is currently excluded
+            Search::excludedMove[ply] == 0 // No move is currently excluded
             && depth >= 8 // Only extend in deeper searches
             && entry != nullptr
             && move == entry->move // Move matches TT best move
@@ -255,14 +275,8 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
             && entry->flag != TT_UPPER // Reliable
         ) {
             
-            // Might be a "sigular move", try singular extension
-            excludedMove[ply] = move;
-            int32_t singularBeta = entry->eval - (3 * depth); // How much moves must be worse than the singular move
-            int32_t singularScore = Search::bestMoves(board, (depth - 1) / 2, ply, singularBeta - 1, singularBeta, PV, isPvNode);
-            excludedMove[ply] = 0; // Reset excluded move
-
-            // Extend the search depth by 1 if the move is singular
-            if (singularScore < singularBeta) extend++;
+            // Might be a "singular move", try singular extension
+            extend += Search::singularSearch(board, depth, ply, PV, entry->eval, move); 
         }
 
         // Move making shenanigans

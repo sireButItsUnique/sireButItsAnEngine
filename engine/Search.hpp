@@ -68,6 +68,19 @@ namespace Search {
      * @param board The current board state.
      * @param depth The search depth.
      * @param ply The current ply
+     * @param PV Stores the best moves
+     * @param entryEval The evaluation of the excluded move from the transposition table
+     * @param excludedMove The move to exclude from the search (the "singular move")
+     * @return An integer score representing the evaluation excluding the "best move"
+     */
+    int32_t singularSearch(Board& board, int depth, int ply, vector<vector<uint32_t>>& PV, int entryEval, int excludedMove);
+
+    /**
+     * @brief Finds the best moves for the current player.
+     *
+     * @param board The current board state.
+     * @param depth The search depth.
+     * @param ply The current ply
      * @param alpha The highest score that the cur player is guranteed
      * @param beta The highest score that the opp player is guranteed. If the score is greater than beta, the search can be pruned since from opp's POV it will be worse than beta.
      * @param PV Stores the best moves
