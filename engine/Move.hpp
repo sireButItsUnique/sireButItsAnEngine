@@ -8,7 +8,7 @@
  *        [4, 5] = castling {is, side}
  *        [6, 11] = from
  *        [12, 17] = to
- *
+ *		  [18] = isEnpassant
  */
 namespace Move {
 	
@@ -53,6 +53,13 @@ namespace Move {
 		data |= 0x8000000; // set the castle bit
 		if (side) data |= 0x4000000; // set the queenside flag
 		else data &= ~0x4000000; // clear the queenside flag for kingside
+	}
+
+	/**
+	 * @brief sets the enpassant flag
+	 */
+	inline void setEnpassant(uint32_t& data) {
+		data |= 0x2000; // set the enpassant bit
 	}
 
 	/**
@@ -117,6 +124,13 @@ namespace Move {
 	 */
 	inline bool castleSide(uint32_t& data) {
 		return (data & 0x4000000);
+	}
+
+	/**
+	 * @brief returns whether or not the move has an enpassant flag
+	 */
+	inline bool isEnpassant(uint32_t& data) {
+		return (data & 0x2000);
 	}
 
 	/**

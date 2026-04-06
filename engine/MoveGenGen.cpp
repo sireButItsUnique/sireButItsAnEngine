@@ -154,6 +154,7 @@ void MoveGen::genPawnMoves(Board& board, fast::vector<uint32_t>& moves, bool col
     uint64_t friendlyPieces = board.colorBoards[color];
     uint64_t enemyPieces = board.colorBoards[!color];
 
+	// main loop
 	while (pawnBoard) {
 		// mask pawn
 		uint8_t from = _tzcnt_u64(pawnBoard);
@@ -207,6 +208,38 @@ void MoveGen::genPawnMoves(Board& board, fast::vector<uint32_t>& moves, bool col
                 Move::setPosition(move, from, to);
                 moves.push_back(move);
 			}
+
+			pawn &= ~(1ULL << to);
+		}
+		pawnBoard &= ~(1ULL << from);
+	}
+
+	// en passant shenanigans
+	if (!board.enPassantSquare) return; // no en passant square, skip
+	pawnBoard = board.pieceBoards[PAWN + color];
+	uint64_t enPassantSquare = board.enPassantSquare;
+	while (pawnBoard) {
+		// mask pawn
+		uint8_t from = _tzcnt_u64(pawnBoard);
+		uint64_t pawn = 0;
+
+		// captures
+		if (color) {
+			pawn |= (((1ULL << from) >> 9) & 0x7f7f7f7f7f7f7f7fULL & enPassantSquare);
+			pawn |= (((1ULL << from) >> 7) & 0xfefefefefefefefeULL & enPassantSquare);
+		} else {
+			pawn |= (((1ULL << from) << 9) & 0xfefefefefefefefeULL & enPassantSquare);
+			pawn |= (((1ULL << from) << 7) & 0x7f7f7f7f7f7f7f7fULL & enPassantSquare);
+		}
+
+		// iterate over end positions
+		while (pawn) {
+			uint8_t to = _tzcnt_u64(pawn);
+			uint32_t move = 0;
+			Move::setColor(move, color);
+			Move::setPosition(move, from, to);
+			Move::setEnpassant(move);
+			moves.push_back(move);
 
 			pawn &= ~(1ULL << to);
 		}

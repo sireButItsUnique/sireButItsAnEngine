@@ -19,6 +19,7 @@ void Board::setStartingPos() {
     pieceBoards[QUEEN + BLACK]  = 0x0800000000000000;
     pieceBoards[KING + WHITE]   = 0x0000000000000010;
     pieceBoards[KING + BLACK]   = 0x1000000000000000;
+    enPassantSquare = 0;
 
     // Set color boards
     colorBoards[WHITE] = 0x000000000000FFFF;
@@ -45,7 +46,7 @@ void Board::setStartingPos() {
 
 void Board::setFenPos(string pos, string turn, string castling, string enPassant) {
     
-    // Set board position
+    // Set pieceboards
     for (int i = 0; i < 12; ++i) pieceBoards[i] = 0;
     colorBoards[WHITE] = 0;
     colorBoards[BLACK] = 0;
@@ -76,8 +77,11 @@ void Board::setFenPos(string pos, string turn, string castling, string enPassant
             square = min(square + 1, 8 * (square / 8) + 7); // Clamp to row
         }
     }
+    enPassantSquare = 0;
+
+    // Set color boards
     for (int i = 0; i < 12; ++i) {
-        colorBoards[i % 2] |= pieceBoards[i]; // Update color boards
+        colorBoards[i % 2] |= pieceBoards[i];
     }
 
     // Initialize mailbox
@@ -306,6 +310,30 @@ void Board::movePiece(uint32_t move) {
         // Update zobrist key
         key ^= Zobrist::PIECES[PAWN + color][to];
         key ^= Zobrist::PIECES[Move::promotionPiece(move)][to];
+    }
+
+    // Handle en passant
+    if (Move::isEnpassant(move)) {
+        int captureSquare; // Square of the pawn being captured
+        if (color == WHITE) captureSquare = to - 8;
+        else captureSquare = to + 8;
+        pieceBoards[PAWN + !color] &= ~(1ULL << captureSquare); // Remove the captured pawn
+
+        // Update mailbox
+        mailbox[captureSquare] = EMPTY;
+
+        // Update zobrist key
+        key ^= Zobrist::PIECES[PAWN + !color][captureSquare];
+    }
+
+    // Handle double pawn push (set en passant square)
+    enPassantSquare = 0;
+    if (pieceBoards[PAWN + color] & (1ULL << to)) {
+        if (color == WHITE) {
+            if ((to - from) == 16) enPassantSquare = (1ULL << (to - 8));
+        } else {
+            if ((from - to) == 16) enPassantSquare = (1ULL << (to + 8));
+        }
     }
 }
 

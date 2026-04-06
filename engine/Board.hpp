@@ -10,6 +10,7 @@ public:
 	int16_t mailbox[64]; // mailbox for piece positions
 	uint64_t key; // zobrist key for the position
 	bool castlingRights[4]; // castling rights: 0=white king, 1=white queen, 2=black king, 3=black queen
+	uint64_t enPassantSquare; // bitboard with the en passant square
 
 	/**
 	 * @brief who's turn it is to move, white=false; black=true
@@ -68,6 +69,7 @@ public:
 	 */
 	inline bool moveIsCapture(uint32_t move) {
 		if (Move::isCastle(move)) return false; // Castling is not a capture
+		if (Move::isEnpassant(move)) return true; // En passant is def a capture
 		return ((1ULL << Move::to(move)) & colorBoards[!Move::color(move)]);
 	}
 
