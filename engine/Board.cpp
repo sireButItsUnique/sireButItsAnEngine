@@ -108,6 +108,11 @@ void Board::setFenPos(string pos, string turn, string castling, string enPassant
         else if (c == 'q') castlingRights[3] = true;
     }
 
+    // Set en passant square
+    if (enPassant != "-") {
+        enPassantSquare = 1ULL << TO_SQUARE(enPassant[0], enPassant[1]);
+    }
+
     // Gen zobrist key
     this->key = this->getZobristKey();
 }

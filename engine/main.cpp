@@ -67,8 +67,11 @@ int main(int argc, char *argv[]) {
 
                 for (int i = 3; i < tokens.size(); ++i) {
                     uint32_t move = 0;
+                    int from = TO_SQUARE(tokens[i][0], tokens[i][1]);
+                    int to = TO_SQUARE(tokens[i][2], tokens[i][3]);
                     Move::setColor(move, board.turn);
 
+                    // Castling
                     if (tokens[i] == "e1g1" && board.castlingRights[WHITE_KINGSIDE]) {
                         Move::setCastle(move, false);
                     } else if (tokens[i] == "e1c1" && board.castlingRights[WHITE_QUEENSIDE]) {
@@ -77,12 +80,14 @@ int main(int argc, char *argv[]) {
                         Move::setCastle(move, false);
                     } else if (tokens[i] == "e8c8" && board.castlingRights[BLACK_QUEENSIDE]) {
                         Move::setCastle(move, true);
-                    } else {
-                        int from = TO_SQUARE(tokens[i][0], tokens[i][1]);
-                        int to = TO_SQUARE(tokens[i][2], tokens[i][3]);
+                    } 
+                    
+                    // Normal move
+                    else {
                         Move::setPosition(move, from, to);
                     }
 
+                    // Promotion
                     if (tokens[i].size() == 5) {
                         switch (tokens[i][4]) {
                             case 'n': Move::setPromotion(move, KNIGHT); break;
@@ -90,6 +95,15 @@ int main(int argc, char *argv[]) {
                             case 'r': Move::setPromotion(move, ROOK); break;
                             case 'q': Move::setPromotion(move, QUEEN); break;
                         }
+                    }
+
+                    // En passant
+                    if (
+                        board.pieceBoards[PAWN + board.turn] & (1ULL << from) // is pawn move
+                        && tokens[i][0] != tokens[i][2] // is capture move
+                        && !(board.colorBoards[!board.turn] & (1ULL << to)) // target square is empty
+                    ) {
+                        Move::setEnpassant(move);
                     }
 
                     board.movePiece(move);
@@ -99,8 +113,11 @@ int main(int argc, char *argv[]) {
             if (tokens[1] == "fen" && tokens.size() > 8) {
                 for (int i = 9; i < tokens.size(); ++i) {
                     uint32_t move = 0;
+                    int from = TO_SQUARE(tokens[i][0], tokens[i][1]);
+                    int to = TO_SQUARE(tokens[i][2], tokens[i][3]);
                     Move::setColor(move, board.turn);
 
+                    // Castling
                     if (tokens[i] == "e1g1" && board.castlingRights[WHITE_KINGSIDE]) {
                         Move::setCastle(move, false);
                     } else if (tokens[i] == "e1c1" && board.castlingRights[WHITE_QUEENSIDE]) {
@@ -109,12 +126,14 @@ int main(int argc, char *argv[]) {
                         Move::setCastle(move, false);
                     } else if (tokens[i] == "e8c8" && board.castlingRights[BLACK_QUEENSIDE]) {
                         Move::setCastle(move, true);
-                    } else {
-                        int from = TO_SQUARE(tokens[i][0], tokens[i][1]);
-                        int to = TO_SQUARE(tokens[i][2], tokens[i][3]);
+                    } 
+                    
+                    // Normal move
+                    else {
                         Move::setPosition(move, from, to);
                     }
 
+                    // Promotion
                     if (tokens[i].size() == 5) {
                         switch (tokens[i][4]) {
                             case 'n': Move::setPromotion(move, KNIGHT); break;
@@ -122,6 +141,15 @@ int main(int argc, char *argv[]) {
                             case 'r': Move::setPromotion(move, ROOK); break;
                             case 'q': Move::setPromotion(move, QUEEN); break;
                         }
+                    }
+
+                    // En passant
+                    if (
+                        board.pieceBoards[PAWN + board.turn] & (1ULL << from) // is pawn move
+                        && tokens[i][0] != tokens[i][2] // is capture move
+                        && !(board.colorBoards[!board.turn] & (1ULL << to)) // target square is empty
+                    ) {
+                        Move::setEnpassant(move);
                     }
 
                     board.movePiece(move);
