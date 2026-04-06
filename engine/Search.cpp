@@ -275,8 +275,7 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
         ) {
             
             // Might be a "singular move", try singular extension
-            if (Search::singularSearch(board, depth, ply, PV, entry->eval, move)) extend++; 
-            else if (entry->eval >= beta) extend--;
+            if (Search::singularSearch(board, depth, ply, PV, entry->eval, move)) extend++;
         }
 
         // Move making shenanigans
