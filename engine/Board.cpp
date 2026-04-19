@@ -119,6 +119,7 @@ void Board::setFenPos(string pos, string turn, string castling, string enPassant
 
 void Board::movePiece(uint32_t move) {
     this->turn = !this->turn; // Switch turn
+    this->enPassantSquare = 0;
 
     bool color = Move::color(move);
     uint8_t from = Move::from(move);
@@ -332,12 +333,11 @@ void Board::movePiece(uint32_t move) {
     }
 
     // Handle double pawn push (set en passant square)
-    enPassantSquare = 0;
     if (pieceBoards[PAWN + color] & (1ULL << to)) {
         if (color == WHITE) {
-            if ((to - from) == 16) enPassantSquare = (1ULL << (to - 8));
+            if ((to - from) == 16) this->enPassantSquare = (1ULL << (to - 8));
         } else {
-            if ((from - to) == 16) enPassantSquare = (1ULL << (to + 8));
+            if ((from - to) == 16) this->enPassantSquare = (1ULL << (to + 8));
         }
     }
 }
@@ -389,6 +389,9 @@ void Board::print() {
                 if (pieceBoards[i] & (1ULL << square)) {
                     piece = "PpNnBbRrQqKk"[i];
                     break;
+                }
+                if (enPassantSquare & (1ULL << square)) {
+                    piece = '.';
                 }
             }
             cout << " " << piece << " |";
