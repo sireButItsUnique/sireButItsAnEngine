@@ -7,7 +7,7 @@ extern "C" {
 
 namespace NNUE {
     int16_t acc_weights[INPUT_SIZE][ACC_SIZE];
-    int16_t out_weights[ACC_SIZE * 2][OUTPUT_SIZE];
+    int16_t out_weights[OUTPUT_SIZE][2][ACC_SIZE * 2];
 
     int16_t acc_bias[ACC_SIZE];
     int16_t out_bias[OUTPUT_SIZE];
@@ -17,14 +17,27 @@ void NNUE::init() {
     char *ptr = (char *)gnetwork_weightsData;
 	memcpy(acc_weights, ptr, sizeof(acc_weights));
 	ptr += sizeof(acc_weights);
+
 	memcpy(acc_bias, ptr, sizeof(acc_bias));
 	ptr += sizeof(acc_bias);
-	memcpy(out_weights, ptr, sizeof(out_weights));
-	ptr += sizeof(out_weights);
+
+    int16_t tmp[OUTPUT_SIZE][ACC_SIZE * 2];
+	memcpy(tmp, ptr, sizeof(tmp));
+	ptr += sizeof(tmp);
+
 	memcpy(&out_bias, ptr, sizeof(out_bias));
+
+    for (int i = ACC_SIZE; i < ACC_SIZE * 2; i++) {
+        out_weights[0][WHITE][i] = tmp[0][i];
+        out_weights[0][BLACK][i] = tmp[0][i - ACC_SIZE];
+    }
+    for (int i = 0; i < ACC_SIZE; i++) {
+        out_weights[0][WHITE][i] = tmp[0][i];
+        out_weights[0][BLACK][i] = tmp[0][i + ACC_SIZE];
+    }
 }
 
-void NNUE::initAccBias(int32_t (&acc)[2 * ACC_SIZE]) {
+void NNUE::initAccBias(int16_t (&acc)[2 * ACC_SIZE]) {
     memset(acc, 0, sizeof(acc)); // Initialize acc to zero
     for (int i = 0; i < ACC_SIZE; i++) {
         acc[i] += acc_bias[i];
@@ -41,7 +54,43 @@ int32_t getWeightIdx(int piece, int square, bool perspective) {
     return idx;
 }
 
-int32_t NNUE::evalBoardFast(Board& board, int32_t (&acc)[2 * ACC_SIZE], Board& accBoard) {
+int32_t sumVec32(__m256i vec) {
+    __m128i sum = _mm_add_epi32(_mm256_castsi256_si128(vec), _mm256_extracti128_si256(vec, 1));
+    sum = _mm_add_epi32(sum, _mm_shuffle_epi32(sum, _MM_PERM_BADC));
+    sum = _mm_add_epi32(sum, _mm_shuffle_epi32(sum, _MM_PERM_CDAB));
+
+    return _mm_cvtsi128_si32(sum);
+}
+
+int32_t NNUE::calcOutput(int16_t (&acc)[2 * ACC_SIZE], bool turn) {
+
+    __m256i clampMin = _mm256_setzero_si256();
+    __m256i clampMax = _mm256_set1_epi16(QA);
+    __m256i sum = _mm256_setzero_si256();
+
+    for (int i = 0; i < ACC_SIZE * 2; i += 16) {
+        __m256i input = _mm256_loadu_si256((__m256i*)&acc[i]);
+        input = _mm256_max_epi16(input, clampMin);
+        input = _mm256_min_epi16(input, clampMax);
+
+        __m256i weight = _mm256_loadu_si256((__m256i*)&out_weights[0][turn][i]);
+        
+        __m256i x = _mm256_mullo_epi16(input, weight);
+        x = _mm256_madd_epi16(x, input);
+        sum = _mm256_add_epi32(sum, x);
+    }
+    
+    int output = sumVec32(sum);
+
+    output /= QA;
+    output += out_bias[0];
+    output *= SCALE;
+    output /= QA * QB;
+
+    return output;
+}
+
+int32_t NNUE::evalBoardFast(Board& board, int16_t (&acc)[2 * ACC_SIZE], Board& accBoard) {
     
     // Update acc layer based on changes from last move
     int16_t* accMailbox = accBoard.mailbox;
@@ -67,27 +116,7 @@ int32_t NNUE::evalBoardFast(Board& board, int32_t (&acc)[2 * ACC_SIZE], Board& a
     }
 
     // Compute output layer
-    int32_t output = 0;
-    if (board.turn == WHITE) {
-        for (int i = 0; i < ACC_SIZE * 2; i++) {
-            int16_t input = clamp(acc[i], 0, QA);
-            output += (input * input) * out_weights[i][0];
-        }
-    } else {
-        for (int i = ACC_SIZE; i < ACC_SIZE * 2; i++) {
-            int16_t input = clamp(acc[i], 0, QA);
-            output += (input * input) * out_weights[i - ACC_SIZE][0];
-        }
-        for (int i = 0; i < ACC_SIZE; i++) {
-            int16_t input = clamp(acc[i], 0, QA);
-            output += (input * input) * out_weights[i + ACC_SIZE][0];
-        }
-    }
-    
-    output /= QA;
-    output += out_bias[0];
-    output *= SCALE;
-    output /= QA * QB;
+    int32_t output = calcOutput(acc, board.turn);
 
     // Update accBoard to current board
     accBoard = board;
@@ -97,7 +126,7 @@ int32_t NNUE::evalBoardFast(Board& board, int32_t (&acc)[2 * ACC_SIZE], Board& a
 int32_t NNUE::evalBoard(Board& board) {
     
     // Prepare input layers
-    int32_t acc[2 * ACC_SIZE] = {0};
+    int16_t acc[2 * ACC_SIZE] = {0};
     for (int square = 0; square < 64; square++) {
         if (board.mailbox[square] != EMPTY) {
 
@@ -116,26 +145,7 @@ int32_t NNUE::evalBoard(Board& board) {
     }
 
     // Compute output layer
-    int32_t output = 0;
-    if (board.turn == WHITE) {
-        for (int i = 0; i < ACC_SIZE * 2; i++) {
-            int16_t input = clamp(acc[i], 0, QA);
-            output += (input * input) * out_weights[i][0];
-        }
-    } else {
-        for (int i = ACC_SIZE; i < ACC_SIZE * 2; i++) {
-            int16_t input = clamp(acc[i], 0, QA);
-            output += (input * input) * out_weights[i - ACC_SIZE][0];
-        }
-        for (int i = 0; i < ACC_SIZE; i++) {
-            int16_t input = clamp(acc[i], 0, QA);
-            output += (input * input) * out_weights[i + ACC_SIZE][0];
-        }
-    }
-    output /= QA;
-    output += out_bias[0];
-    output *= SCALE;
-    output /= QA * QB;
+    int32_t output = calcOutput(acc, board.turn);
 
     return output;
 }

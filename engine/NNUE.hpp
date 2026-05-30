@@ -12,16 +12,18 @@
 
 namespace NNUE {
     extern int16_t acc_weights[INPUT_SIZE][ACC_SIZE];
-    extern int16_t out_weights[ACC_SIZE * 2][OUTPUT_SIZE];
+    extern int16_t out_weights[OUTPUT_SIZE][2][ACC_SIZE * 2];
 
     extern int16_t acc_bias[ACC_SIZE];
     extern int16_t out_bias[OUTPUT_SIZE];
 
     void init();
 
-    void initAccBias(int32_t (&acc)[2 * ACC_SIZE]);
+    void initAccBias(int16_t (&acc)[2 * ACC_SIZE]);
 
-    int32_t evalBoardFast(Board& board, int32_t (&acc)[2 * ACC_SIZE], Board& accBoard);
+    int32_t calcOutput(int16_t (&acc)[2 * ACC_SIZE], bool turn);
+
+    int32_t evalBoardFast(Board& board, int16_t (&acc)[2 * ACC_SIZE], Board& accBoard);
 
     int32_t evalBoard(Board& board);
 }

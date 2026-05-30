@@ -1,7 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <chrono>
-#include <x86intrin.h>
+#include <immintrin.h>
 #include <iomanip>
 #include <iostream>
 #include <locale.h>
