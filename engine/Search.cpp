@@ -14,7 +14,7 @@ namespace Search {
     fast::lvector<uint64_t> threeFoldReps;
 
     // Accumulation cache for NNUE 
-    int16_t acc[2 * ACC_SIZE];
+    int32_t acc[2 * ACC_SIZE];
     Board& accBoard = *(new Board());
 
     // Standard move ordering stuff
