@@ -34,7 +34,7 @@ void NNUE::init() {
     }
 }
 
-void NNUE::initAccBias(int32_t (&acc)[2 * ACC_SIZE]) {
+void NNUE::initAccBias(int16_t (&acc)[2 * ACC_SIZE]) {
     memset(acc, 0, sizeof(acc)); // Initialize acc to zero
     for (int i = 0; i < ACC_SIZE; i++) {
         acc[i] += acc_bias[i];
@@ -51,7 +51,7 @@ int32_t getWeightIdx(int piece, int square, bool perspective) {
     return idx;
 }
 
-int32_t NNUE::evalBoardFast(Board& board, int32_t (&acc)[2 * ACC_SIZE], Board& accBoard) {
+int32_t NNUE::evalBoardFast(Board& board, int16_t (&acc)[2 * ACC_SIZE], Board& accBoard) {
     
     // Update acc layer based on changes from last move
     int16_t* accMailbox = accBoard.mailbox;
@@ -78,8 +78,9 @@ int32_t NNUE::evalBoardFast(Board& board, int32_t (&acc)[2 * ACC_SIZE], Board& a
 
     // Compute output layer
     int32_t output = 0;
+    int16_t clampMin = 0, clampMax = QA;
     for (int i = 0; i < ACC_SIZE * 2; i++) {
-        int16_t input = clamp(acc[i], 0, QA);
+        int16_t input = clamp(acc[i], clampMin, clampMax);
         output += (input * input) * out_weights[0][board.turn][i];
     }
     
@@ -96,7 +97,7 @@ int32_t NNUE::evalBoardFast(Board& board, int32_t (&acc)[2 * ACC_SIZE], Board& a
 int32_t NNUE::evalBoard(Board& board) {
     
     // Prepare input layers
-    int32_t acc[2 * ACC_SIZE] = {0};
+    int16_t acc[2 * ACC_SIZE] = {0};
     for (int square = 0; square < 64; square++) {
         if (board.mailbox[square] != EMPTY) {
 
@@ -116,8 +117,9 @@ int32_t NNUE::evalBoard(Board& board) {
 
     // Compute output layer
     int32_t output = 0;
+    int16_t clampMin = 0, clampMax = QA;
     for (int i = 0; i < ACC_SIZE * 2; i++) {
-        int16_t input = clamp(acc[i], 0, QA);
+        int16_t input = clamp(acc[i], clampMin, clampMax);
         output += (input * input) * out_weights[0][board.turn][i];
     }
     output /= QA;
