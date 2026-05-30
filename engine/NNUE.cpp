@@ -7,7 +7,7 @@ extern "C" {
 
 namespace NNUE {
     int16_t acc_weights[INPUT_SIZE][ACC_SIZE];
-    int16_t out_weights[ACC_SIZE * 2][OUTPUT_SIZE];
+    int16_t out_weights[OUTPUT_SIZE][2][ACC_SIZE * 2];
 
     int16_t acc_bias[ACC_SIZE];
     int16_t out_bias[OUTPUT_SIZE];
@@ -19,9 +19,19 @@ void NNUE::init() {
 	ptr += sizeof(acc_weights);
 	memcpy(acc_bias, ptr, sizeof(acc_bias));
 	ptr += sizeof(acc_bias);
-	memcpy(out_weights, ptr, sizeof(out_weights));
-	ptr += sizeof(out_weights);
+	int16_t tmp[OUTPUT_SIZE][ACC_SIZE * 2];
+	memcpy(tmp, ptr, sizeof(tmp));
+	ptr += sizeof(tmp);
 	memcpy(&out_bias, ptr, sizeof(out_bias));
+
+    for (int i = ACC_SIZE; i < ACC_SIZE * 2; i++) {
+        out_weights[0][WHITE][i] = tmp[0][i];
+        out_weights[0][BLACK][i] = tmp[0][i - ACC_SIZE];
+    }
+    for (int i = 0; i < ACC_SIZE; i++) {
+        out_weights[0][WHITE][i] = tmp[0][i];
+        out_weights[0][BLACK][i] = tmp[0][i + ACC_SIZE];
+    }
 }
 
 void NNUE::initAccBias(int32_t (&acc)[2 * ACC_SIZE]) {
@@ -68,20 +78,9 @@ int32_t NNUE::evalBoardFast(Board& board, int32_t (&acc)[2 * ACC_SIZE], Board& a
 
     // Compute output layer
     int32_t output = 0;
-    if (board.turn == WHITE) {
-        for (int i = 0; i < ACC_SIZE * 2; i++) {
-            int16_t input = clamp(acc[i], 0, QA);
-            output += (input * input) * out_weights[i][0];
-        }
-    } else {
-        for (int i = ACC_SIZE; i < ACC_SIZE * 2; i++) {
-            int16_t input = clamp(acc[i], 0, QA);
-            output += (input * input) * out_weights[i - ACC_SIZE][0];
-        }
-        for (int i = 0; i < ACC_SIZE; i++) {
-            int16_t input = clamp(acc[i], 0, QA);
-            output += (input * input) * out_weights[i + ACC_SIZE][0];
-        }
+    for (int i = 0; i < ACC_SIZE * 2; i++) {
+        int16_t input = clamp(acc[i], 0, QA);
+        output += (input * input) * out_weights[0][board.turn][i];
     }
     
     output /= QA;
@@ -117,20 +116,9 @@ int32_t NNUE::evalBoard(Board& board) {
 
     // Compute output layer
     int32_t output = 0;
-    if (board.turn == WHITE) {
-        for (int i = 0; i < ACC_SIZE * 2; i++) {
-            int16_t input = clamp(acc[i], 0, QA);
-            output += (input * input) * out_weights[i][0];
-        }
-    } else {
-        for (int i = ACC_SIZE; i < ACC_SIZE * 2; i++) {
-            int16_t input = clamp(acc[i], 0, QA);
-            output += (input * input) * out_weights[i - ACC_SIZE][0];
-        }
-        for (int i = 0; i < ACC_SIZE; i++) {
-            int16_t input = clamp(acc[i], 0, QA);
-            output += (input * input) * out_weights[i + ACC_SIZE][0];
-        }
+    for (int i = 0; i < ACC_SIZE * 2; i++) {
+        int16_t input = clamp(acc[i], 0, QA);
+        output += (input * input) * out_weights[0][board.turn][i];
     }
     output /= QA;
     output += out_bias[0];

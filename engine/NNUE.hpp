@@ -12,7 +12,7 @@
 
 namespace NNUE {
     extern int16_t acc_weights[INPUT_SIZE][ACC_SIZE];
-    extern int16_t out_weights[ACC_SIZE * 2][OUTPUT_SIZE];
+    extern int16_t out_weights[OUTPUT_SIZE][2][ACC_SIZE * 2];
 
     extern int16_t acc_bias[ACC_SIZE];
     extern int16_t out_bias[OUTPUT_SIZE];
