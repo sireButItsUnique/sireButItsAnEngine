@@ -80,7 +80,7 @@ int32_t NNUE::evalBoardFast(Board& board, int16_t (&acc)[2 * ACC_SIZE], Board& a
     int32_t output = 0;
     int16_t clampMin = 0, clampMax = QA;
     for (int i = 0; i < ACC_SIZE * 2; i++) {
-        int16_t input = clamp(acc[i], clampMin, clampMax);
+        int32_t input = clamp(acc[i], clampMin, clampMax);
         output += (input * input) * out_weights[0][board.turn][i];
     }
     
@@ -119,7 +119,7 @@ int32_t NNUE::evalBoard(Board& board) {
     int32_t output = 0;
     int16_t clampMin = 0, clampMax = QA;
     for (int i = 0; i < ACC_SIZE * 2; i++) {
-        int16_t input = clamp(acc[i], clampMin, clampMax);
+        int32_t input = clamp(acc[i], clampMin, clampMax);
         output += (input * input) * out_weights[0][board.turn][i];
     }
     output /= QA;
