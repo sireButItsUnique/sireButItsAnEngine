@@ -323,7 +323,10 @@ void Board::movePiece(uint32_t move) {
         int captureSquare; // Square of the pawn being captured
         if (color == WHITE) captureSquare = to - 8;
         else captureSquare = to + 8;
-        pieceBoards[PAWN + !color] &= ~(1ULL << captureSquare); // Remove the captured pawn
+
+        // Remove the captured pawn
+        pieceBoards[PAWN + !color] &= ~(1ULL << captureSquare); 
+        colorBoards[!color] &= ~(1ULL << captureSquare); 
 
         // Update mailbox
         mailbox[captureSquare] = EMPTY;
@@ -402,4 +405,6 @@ void Board::print() {
     cout << "  a   b   c   d   e   f   g   h" << endl;
     cout << "Turn: " << (turn ? "Black" : "White") << endl;
     cout << "Key: " << hex << getZobristKey() << dec << endl;
+    cout << "White pieces: " << colorBoards[WHITE] << endl;
+    cout << "Black pieces: " << colorBoards[BLACK] << endl;
 }

@@ -1,0 +1,1 @@
+position fen rnbqk2r/pp3pbp/2pp1np1/4p3/2P1P3/2N3NP/PP1P1PP1/R1BQKB1R b KQkq - 0 7 moves h7h5 f1e2 c8e6 e1g1 h5h4 g3h1 d6d5 d2d3 d5d4 c3a4 b8d7 c4c5 b7b5 c5b6 a7b6 c1g5 d8c7 b2b3 c6c5 e2f3 f6h5 f3g4 d7f8 a4b2 g7f6 g5d2 e6g4 h3g4 h5f4 d1f3 f6g5 d2f4 g5f4 g2g3 f4g5 a2a4 f8e6
