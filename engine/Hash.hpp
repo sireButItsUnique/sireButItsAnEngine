@@ -44,8 +44,9 @@ struct TTEntry {
 };
 
 namespace TT {
-    extern const int TT_SIZE;
-    extern TTEntry table[1 << 22];
+    extern uint64_t TT_SIZE;
+    extern uint64_t mask;
+    extern TTEntry *table;
 
     /**
      * @brief Sets a transposition table entry.
@@ -56,7 +57,7 @@ namespace TT {
      * @param flag The flag associated with this entry.
      */
     inline void set(uint64_t key, int32_t eval, int depth, uint64_t move, uint8_t flag) {
-        TTEntry *entry = TT::table + (key % TT_SIZE);
+        TTEntry *entry = TT::table + (key & TT::mask);
 
         // Write the new entry
         if (depth >= entry->depth || entry->key != key) {
@@ -76,11 +77,25 @@ namespace TT {
      * @return A pointer to the TTEntry if found, otherwise nullptr.
      */
     inline TTEntry* get(uint64_t key) {
-        TTEntry *entry = TT::table + (key % TT_SIZE);
+        TTEntry *entry = TT::table + (key & TT::mask);
         
         // Check if the entry is valid
         if (entry->key == key) return entry;
         
         return nullptr; // No valid entry found
+    }
+
+
+    /**
+     * @brief Initializes the transposition table with the given size.
+     * @param size The size of the transposition table (number of entries).
+     */
+    inline void init(uint32_t size) {
+        if (table != nullptr) delete[] table;
+
+        TT_SIZE = size;
+        mask = TT_SIZE - 1;
+        table = new TTEntry[TT_SIZE];
+        memset(table, 0, sizeof(TTEntry) * TT_SIZE);
     }
 }

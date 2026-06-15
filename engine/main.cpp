@@ -16,6 +16,7 @@ int main(int argc, char *argv[]) {
     Zobrist::init(); // Initialize Zobrist hashing tables
     NNUE::init(); // Initialize NNUE network, load weights
     Search::init(); // Initialize search's lookup tables
+    TT::init(1ULL << 22); // Initialize transposition table to 4m entries by default
 
     // Run benchmark
     if (argc == 2 && std::string(argv[1]) == "bench") {
@@ -50,6 +51,25 @@ int main(int argc, char *argv[]) {
             cout << "option name Threads type spin default 1 min 1 max 1" << endl;
             cout << "uciok" << endl;
         } 
+
+        else if (cmd == "setoption") {
+            getline(cin, cmd);
+            vector<string> tokens;
+            SPLIT_STRING(cmd, tokens);
+            if (tokens[2] == "Hash") {
+                uint64_t size = stoi(tokens[4]); // size in MB
+                uint64_t maxEntries = (size << 20) / sizeof(TTEntry);
+
+                // max amount of entry that fits in given size
+                int n = 1;
+                while ((1ULL << n) <= maxEntries) n++;
+                n--; 
+
+                TT::init(1ULL << n);
+            } else if (tokens[2] == "Threads") {
+                // ignore for now since we are only using 1 thread
+            }
+        }
         
         else if (cmd == "position") {
             getline(cin, cmd);

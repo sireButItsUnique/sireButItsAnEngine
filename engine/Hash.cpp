@@ -22,6 +22,7 @@ void Zobrist::init() {
 }
 
 namespace TT {
-    const int TT_SIZE = 1 << 22; // 4M entries
-    TTEntry table[TT_SIZE]; // 4M entries
+    uint64_t TT_SIZE;
+    uint64_t mask;
+    TTEntry *table;
 }
