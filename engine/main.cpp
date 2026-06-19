@@ -52,6 +52,13 @@ int main(int argc, char *argv[]) {
             cout << "uciok" << endl;
         } 
 
+        else if (cmd == "ucinewgame") {
+            board.setStartingPos();
+            threeFoldReps.clear();
+            threeFoldReps.push_back(board.key);
+            TT::init(TT::TT_SIZE); // clears tt but keeps size
+        }
+
         else if (cmd == "setoption") {
             getline(cin, cmd);
             vector<string> tokens;
