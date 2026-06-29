@@ -22,7 +22,8 @@ void Zobrist::init() {
 }
 
 namespace TT {
-    uint64_t TT_SIZE;
+    uint32_t TT_SIZE;
+    uint64_t TT_LEN;
     uint64_t mask;
     TTEntry *table;
 }

@@ -44,7 +44,8 @@ struct TTEntry {
 };
 
 namespace TT {
-    extern uint64_t TT_SIZE;
+    extern uint32_t TT_SIZE;
+    extern uint64_t TT_LEN;
     extern uint64_t mask;
     extern TTEntry *table;
 
@@ -87,15 +88,24 @@ namespace TT {
 
 
     /**
-     * @brief Initializes the transposition table with the given size.
-     * @param size The size of the transposition table (number of entries).
+     * @brief Initializes the transposition table with the given size in MB
+     * @param size The size of the transposition table (number of entries)
      */
     inline void init(uint32_t size) {
+        uint64_t maxEntries = (size << 20) / sizeof(TTEntry);
+
+        // max amount of entry that fits in given size
+        int n = 1;
+        while ((1ULL << n) <= maxEntries) n++;
+        n--; 
+        uint32_t numEntries = 1ULL << n;
+
         if (table != nullptr) delete[] table;
 
         TT_SIZE = size;
-        mask = TT_SIZE - 1;
-        table = new TTEntry[TT_SIZE];
-        memset(table, 0, sizeof(TTEntry) * TT_SIZE);
+        TT_LEN = numEntries;
+        mask = TT_LEN - 1;
+        table = new TTEntry[TT_LEN];
+        memset(table, 0, sizeof(TTEntry) * TT_LEN);
     }
 }
