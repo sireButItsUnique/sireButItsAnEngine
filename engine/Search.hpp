@@ -76,6 +76,18 @@ namespace Search {
     bool singularSearch(Board& board, int depth, int ply, vector<vector<uint32_t>>& PV, int entryEval, int excludedMove);
 
     /**
+     * @brief Performs a static exchange evaluation (SEE) on a move: estimates the net material
+     *        result of playing the move and then following the optimal sequence of recaptures
+     *        on the destination square.
+     *
+     * @param board The current board state (not modified).
+     * @param move The move to evaluate (typically a capture).
+     * @param threshold The minimum material gain required for the move to be considered favorable.
+     * @return A boolean indicating whether the move is favorable.
+     */
+    bool see(Board& board, uint32_t move, int32_t threshold);
+
+    /**
      * @brief Finds the best moves for the current player.
      *
      * @param board The current board state.

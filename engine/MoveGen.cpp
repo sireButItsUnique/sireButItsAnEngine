@@ -365,3 +365,50 @@ bool Board::kingIsAttacked(bool color) {
 
     return this->squareIsAttacked(color, _tzcnt_u64(kingBoard));
 }
+
+inline uint64_t seeRookAttacks(int square, uint64_t occ) {
+	uint64_t idx = _pext_u64(occ & MoveGen::rookRays[square], MoveGen::rookRays[square]);
+	return MoveGen::rookLookup[MoveGen::rookLookupOffsets[square] + idx];
+}
+inline uint64_t seeBishopAttacks(int square, uint64_t occ) {
+	uint64_t idx = _pext_u64(occ & MoveGen::bishopRays[square], MoveGen::bishopRays[square]);
+	return MoveGen::bishopLookup[MoveGen::bishopLookupOffsets[square] + idx];
+}
+inline uint64_t seeWhitePawnAttacksFrom(uint64_t pawns) {
+	return ((pawns << 9) & 0xfefefefefefefefeULL) | ((pawns << 7) & 0x7f7f7f7f7f7f7f7fULL);
+}
+inline uint64_t seeBlackPawnAttacksFrom(uint64_t pawns) {
+	return ((pawns >> 7) & 0xfefefefefefefefeULL) | ((pawns >> 9) & 0x7f7f7f7f7f7f7f7fULL);
+}
+
+// All pieces (both colors) attacking `square`, given occupancy `occ`.
+uint64_t MoveGen::seeAttackersTo(Board& board, int square, uint64_t occ) {
+	uint64_t sq = 1ULL << square;
+	uint64_t attackers = 0;
+
+	attackers |= MoveGen::knightLookup[square] & (board.pieceBoards[KNIGHT + WHITE] | board.pieceBoards[KNIGHT + BLACK]);
+	attackers |= MoveGen::kingLookup[square]   & (board.pieceBoards[KING + WHITE]   | board.pieceBoards[KING + BLACK]);
+
+	uint64_t rookAtt = seeRookAttacks(square, occ);
+	uint64_t bishopAtt = seeBishopAttacks(square, occ);
+	attackers |= rookAtt   & (board.pieceBoards[ROOK + WHITE]   | board.pieceBoards[ROOK + BLACK]   | board.pieceBoards[QUEEN + WHITE] | board.pieceBoards[QUEEN + BLACK]);
+	attackers |= bishopAtt & (board.pieceBoards[BISHOP + WHITE] | board.pieceBoards[BISHOP + BLACK] | board.pieceBoards[QUEEN + WHITE] | board.pieceBoards[QUEEN + BLACK]);
+
+	attackers |= seeBlackPawnAttacksFrom(sq) & board.pieceBoards[PAWN + WHITE];
+	attackers |= seeWhitePawnAttacksFrom(sq) & board.pieceBoards[PAWN + BLACK];
+
+	return attackers & occ;
+}
+
+// Cheapest attacker belonging to `side` within `attackers`. Returns its single-bit
+// bitboard (0 if none) and writes piece (0-5) to outType.
+uint64_t MoveGen::seeLeastValuableAttacker(Board& board, uint64_t attackers, bool side, int& outType) {
+	for (int piece = 0; piece <= KING; piece += 2) {
+		uint64_t bb = board.pieceBoards[piece + side] & attackers;
+		if (bb) {
+			outType = piece / 2;
+			return bb & -bb;
+		}
+	}
+	return 0;
+}

@@ -45,4 +45,7 @@ namespace MoveGen {
     void genQueenMoves(Board& board, fast::vector<uint32_t>& moves, bool color);
     void genKingMoves(Board& board, fast::vector<uint32_t>& moves, bool color);
     void genCastlingMoves(Board& board, fast::vector<uint32_t>& moves, bool color);
+
+    uint64_t seeAttackersTo(Board& board, int square, uint64_t occ);
+    uint64_t seeLeastValuableAttacker(Board& board, uint64_t attackers, bool side, int& outType);
 }

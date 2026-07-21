@@ -34,6 +34,9 @@ namespace Search {
     // Singular extension stuff
     uint32_t excludedMove[64]; // Move to exclude for singular extension
     bool inSingularSearch; // Flag to indicate if we are currently in a singular extension search
+
+    // Static exchange evaluation stuff
+    constexpr int32_t SEE_VALUES[6] = { 100, 300, 330, 500, 900, 20000 }; 
 }
 
 void Search::init() {
@@ -98,6 +101,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
     // Collect capturing moves and sort them by qsearch history
     for (uint32_t move : moves) {
         if (board.moveIsCapture(move)) {
+            if (!Search::see(board, move, 0)) continue; // Skip if SEE fails
             captures.push_back(move);
         }
     }
@@ -141,6 +145,62 @@ bool Search::singularSearch(Board& board, int depth, int ply, vector<vector<uint
     Search::inSingularSearch = false;
 
     return singularScore < singularBeta;
+}
+
+bool Search::see(Board& board, uint32_t move, int32_t threshold) {
+    if (Move::isCastle(move)) return threshold <= 0; // castling moves no material
+
+    int from = Move::from(move);
+    int to = Move::to(move);
+    bool ep = Move::isEnpassant(move);
+    int victimSquare = ep ? ((from & 56) | (to & 7)) : to; // EP: rank of `from`, file of `to`
+
+    int attackerType = board.mailbox[from] >> 1;
+    int victimType = board.mailbox[victimSquare] >> 1;
+
+    int32_t gain = (victimType <= 5) ? SEE_VALUES[victimType] : 0;
+    if (Move::isPromotion(move)) {
+        int promoType = Move::promotionPiece(move) >> 1;
+        gain += SEE_VALUES[promoType] - SEE_VALUES[0]; // pawn becomes promoType
+        attackerType = promoType; // piece now sitting on `to`
+    }
+
+    int32_t score = gain - threshold;
+    if (score < 0) return false; // best case still isn't enough
+
+    score -= SEE_VALUES[attackerType];
+    if (score >= 0) return true; // losing our piece outright is still enough
+
+    uint64_t occ = 0;
+    for (int i = 0; i < 12; i++) occ |= board.pieceBoards[i];
+    occ &= ~(1ULL << from);
+    if (ep) occ &= ~(1ULL << victimSquare);
+    occ |= (1ULL << to);
+
+    bool side = !board.turn; // opponent recaptures first
+
+    while (true) {
+        uint64_t attackers = MoveGen::seeAttackersTo(board, to, occ);
+
+        int nextType;
+        uint64_t attackerBB = MoveGen::seeLeastValuableAttacker(board, attackers, side, nextType);
+        if (!attackerBB) break;
+
+        occ &= ~attackerBB;
+        score = -score - 1 - SEE_VALUES[nextType];
+        side = !side;
+
+        if (score >= 0) {
+            if (nextType == 5) { // KING recaptured — check the square is actually safe to sit on
+                uint64_t remaining = MoveGen::seeAttackersTo(board, to, occ);
+                int dummy;
+                if (MoveGen::seeLeastValuableAttacker(board, remaining, side, dummy)) side = !side;
+            }
+            break;
+        }
+    }
+
+    return side != board.turn;
 }
 
 int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32_t beta, vector<vector<uint32_t>>& PV, bool isPvNode) {
