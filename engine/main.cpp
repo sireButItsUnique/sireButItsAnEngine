@@ -224,7 +224,7 @@ int main(int argc, char *argv[]) {
             else {
                 Search::initSearch(timeCap, threeFoldReps);
                 depth = 1;
-                for ( ; depth < 16; ++depth) {
+                for ( ; depth < 64; ++depth) {
 
                     // set search depth
                     Search::MAX_DEPTH = depth;
