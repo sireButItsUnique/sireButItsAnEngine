@@ -4,7 +4,7 @@
 #include "Board.hpp"
 
 #define INPUT_SIZE 768
-#define ACC_SIZE 16
+#define ACC_SIZE 128
 #define OUTPUT_SIZE 1
 #define QA 255
 #define QB 64
