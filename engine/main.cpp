@@ -6,6 +6,7 @@
 #include "Search.hpp"
 #include "Hash.hpp"
 #include "NNUE.hpp"
+#include "Perft.hpp"
 
 string cmd;
 Board board;
@@ -37,6 +38,46 @@ int main(int argc, char *argv[]) {
         double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
         time_taken *= 1e-9;
         cout << Search::NODE_COUNT << " nodes " << fixed << setprecision(2) << int64_t(Search::NODE_COUNT / time_taken) << " nps" << std::endl;
+        return 0;
+    } 
+    
+    else if (argc == 2 && std::string(argv[1]) == "perft") {
+        
+        uint64_t expectedStarting[8] = {1, 20, 400, 8902, 197281, 4865609, 119060324};
+        uint64_t expectedNodes = 0;
+        for (int i = 0; i < 7; ++i) expectedNodes += expectedStarting[i];
+
+        for (int depth = 0; depth <= 6; ++depth) {
+            Board board;
+            board.setStartingPos();
+            threeFoldReps.clear();
+            threeFoldReps.push_back(board.key);
+
+            uint64_t nodes = perft(&board, depth);
+            cout << "perft: depth " << depth << " " << nodes << " (expected: " << expectedStarting[depth] << ")" << endl;
+        }
+
+        uint64_t expectedP2[6] = {1, 48, 2039, 97862, 4085603, 193690690};
+        expectedNodes = 0;
+        for (int i = 0; i < 6; ++i) expectedNodes += expectedP2[i];
+
+        for (int depth = 0; depth <= 5; ++depth) {
+            Board board;
+            board.setFenPos("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R", "w", "KQkq", "-");
+            threeFoldReps.clear();
+            threeFoldReps.push_back(board.key);
+
+            uint64_t nodes = perft(&board, depth);
+            cout << "perft: depth " << depth << " " << nodes << " (expected: " << expectedP2[depth] << ")" << endl;
+        }
+        
+        
+        // auto start = chrono::high_resolution_clock::now();
+        
+        // auto end = chrono::high_resolution_clock::now();
+        // double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
+        // time_taken *= 1e-9;
+        // cout << nodes << " nodes " << fixed << setprecision(2) << int64_t(nodes / time_taken) << " nps" << std::endl;
         return 0;
     }
 
