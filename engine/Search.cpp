@@ -261,6 +261,13 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
         // Move node setup
         uint32_t move = scored[idx].second;
         int32_t extend = 0; // Number of extensions for this node
+
+        // Moveloop pruning, possibly lossy, only if we're not being mated
+        if (eval > -MATE_SITUATION) {
+
+            // Late move pruning
+            if (idx > 5 + 2 * depth * depth) break;
+        }
         
         // Singular extension setup
         if (move == Search::excludedMove[ply]) continue;
