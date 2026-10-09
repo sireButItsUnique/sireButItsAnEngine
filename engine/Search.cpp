@@ -234,12 +234,12 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
 
         // Capturing Moves Ordering
         else if (board.moveIsCapture(move)) {
-            score = 20000 + Search::MVV_LVA[board.mailbox[Move::to(move)] >> 1][board.mailbox[Move::from(move)] >> 1];
+            score = 30000 + Search::MVV_LVA[board.mailbox[Move::to(move)] >> 1][board.mailbox[Move::from(move)] >> 1];
         } 
         
         // Quiet Moves Ordering
         else {
-            score = -10000;
+            score = 0;
             if (move == killer[ply][0]) score += 1500; // Killer moves
             if (move == killer[ply][1]) score += 1000;
             score += history[Move::id(move)]; // Historical value
@@ -268,9 +268,6 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
 
             // Late move pruning
             if (idx > 5 + 3 * depth * depth) break;
-
-            // History pruning
-            // if (history[Move::id(move)] < -2000 * depth) continue;
         }
         
         // Singular extension setup
