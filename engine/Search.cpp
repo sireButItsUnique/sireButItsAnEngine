@@ -267,6 +267,9 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
 
             // Late move pruning
             if (idx > 5 + 3 * depth * depth) break;
+
+            // History pruning
+            if (history[Move::id(move)] < -2000 * depth) continue;
         }
         
         // Singular extension setup
