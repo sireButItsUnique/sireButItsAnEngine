@@ -36,9 +36,10 @@ int FENIDX_TO_SQUARE(int idx);
 #define WEST 6
 #define NORTHWEST 7
 
-#define MATE_SCORE (INT32_MAX / 2)
-#define INFINITE_SCORE (INT32_MAX - 1000)
-#define MATE_SITUATION (MATE_SCORE - 500)
+const int MATE_SCORE = (INT32_MAX / 2);
+const int INFINITE_SCORE = (INT32_MAX - 1000);
+const int MATE_SITUATION = (MATE_SCORE - 500);
+const int MAX_HISTORY = 16384; // Bounded so gravity keeps entries within [-MAX_HISTORY, MAX_HISTORY]
 
 #define TT_EXACT 0
 #define TT_LOWER 1

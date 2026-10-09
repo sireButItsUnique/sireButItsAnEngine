@@ -65,7 +65,6 @@ void Search::initSearch(int64_t timeLimit, fast::lvector<uint64_t> threeFoldReps
 }
 
 void Search::updateHistory(uint32_t move, int32_t bonus) {
-    const int MAX_HISTORY = 16384; // Bounded so gravity keeps entries within [-MAX_HISTORY, MAX_HISTORY]
 	int clamped_bonus = std::clamp(bonus, -MAX_HISTORY, MAX_HISTORY); // Ensure the bonus is within bounds
 	history[Move::id(move)] += clamped_bonus - history[Move::id(move)] * abs(clamped_bonus) / MAX_HISTORY; // Update the history value
 }
@@ -185,13 +184,14 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
         hashMove = entry->move; // Get the best move from the transposition table
     }
 
+    // Metadata for pruning
+    bool inCheck = board.kingIsAttacked(board.turn); 
+
     // Lossy stuff
-    bool inCheck = true;
     if (!Search::inSingularSearch) {
         
         // Get metadata for the current node
         int32_t staticEval = NNUE::evalBoardFast(board, acc, accBoard);
-        inCheck = board.kingIsAttacked(board.turn);
         bool pawnEndgame = false;
         for (int i = KNIGHT + WHITE; i <= QUEEN + BLACK; i++) {
             pawnEndgame |= board.pieceBoards[i];
@@ -264,7 +264,7 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
         int32_t extend = 0; // Number of extensions for this node
 
         // Moveloop pruning, possibly lossy (cannot run if singular search), only if we're not being mated
-        if (eval > -MATE_SITUATION) {
+        if (eval > -MATE_SITUATION && !inCheck && !board.moveIsCapture(move) && !Move::isPromotion(move)) {
 
             // Late move pruning
             if (idx > 5 + 3 * depth * depth) break;
