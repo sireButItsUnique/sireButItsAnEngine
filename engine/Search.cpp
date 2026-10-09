@@ -266,7 +266,7 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
         if (eval > -MATE_SITUATION) {
 
             // Late move pruning
-            if (idx > 5 + 2 * depth * depth) break;
+            if (idx > 5 + 3 * depth * depth) break;
         }
         
         // Singular extension setup
