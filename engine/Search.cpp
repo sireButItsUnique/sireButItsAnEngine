@@ -97,6 +97,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
     // Collect capturing moves and sort them by qsearch history
     for (uint32_t move : moves) {
         if (board.moveIsCapture(move)) {
+            if (!board.see(move, 0)) continue; // Skip if the capture is not favorable 
             captures.push_back(move);
         }
     }
@@ -234,7 +235,7 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
 
         // Capturing Moves Ordering (losing captures go after all quiets)
         else if (board.moveIsCapture(move)) {
-            score = -30000 + (board.see(move, 0) * 60000); // give +30k if SEE is positive, -30k if negative
+            score = 30000; // Base score for captures
             score += Search::MVV_LVA[board.mailbox[Move::to(move)] >> 1][board.mailbox[Move::from(move)] >> 1];
         }
         
