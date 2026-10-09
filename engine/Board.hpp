@@ -62,6 +62,15 @@ public:
 	bool kingIsAttacked(bool color);
 
 	/**
+	 * @brief static exchange evaluation, checks if the exchange on the target square beats a threshold
+	 *
+	 * @param move move to evaluate
+	 * @param threshold minimum material gain required
+	 * @return true if the exchange gains at least threshold material, false otherwise
+	 */
+	bool see(uint32_t move, int32_t threshold);
+
+	/**
 	 * @brief checks if the move is a capturing move
 	 *
 	 * @param move move to check

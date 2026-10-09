@@ -359,6 +359,85 @@ bool Board::squareIsAttacked(bool color, int square) {
 	return false; // King is not attacked
 }
 
+bool Board::see(uint32_t move, int32_t threshold) {
+	constexpr int32_t SEE_VALUES[7] = {100, 300, 300, 500, 900, 0, 0}; // PNBRQK + empty
+
+	// Castling can never lose material
+	if (Move::isCastle(move)) return threshold <= 0;
+
+	uint8_t from = Move::from(move);
+	uint8_t to = Move::to(move);
+	bool color = Move::color(move);
+
+	// Piece that will be standing on the target square after the move
+	int nextVictim = Move::isPromotion(move) ? (Move::promotionPiece(move) >> 1) : (mailbox[from] >> 1);
+
+	// Material won by the move itself
+	int32_t balance = Move::isEnpassant(move) ? SEE_VALUES[PAWN >> 1] : SEE_VALUES[mailbox[to] >> 1];
+	if (Move::isPromotion(move)) balance += SEE_VALUES[nextVictim] - SEE_VALUES[PAWN >> 1];
+	balance -= threshold;
+	if (balance < 0) return false; // Even if the piece isn't recaptured, we're below threshold
+
+	// Assume we lose the moving piece, if we're still above threshold we're done
+	balance -= SEE_VALUES[nextVictim];
+	if (balance >= 0) return true;
+
+	// Occupancy after the move
+	uint64_t occupied = ((colorBoards[WHITE] | colorBoards[BLACK]) ^ (1ULL << from)) | (1ULL << to);
+	if (Move::isEnpassant(move)) occupied ^= (1ULL << (color == WHITE ? to - 8 : to + 8));
+
+	// Sliders that can x-ray through pieces that get traded off
+	uint64_t diagonals = pieceBoards[BISHOP + WHITE] | pieceBoards[BISHOP + BLACK] | pieceBoards[QUEEN + WHITE] | pieceBoards[QUEEN + BLACK];
+	uint64_t straights = pieceBoards[ROOK + WHITE] | pieceBoards[ROOK + BLACK] | pieceBoards[QUEEN + WHITE] | pieceBoards[QUEEN + BLACK];
+
+	// Gather every piece attacking the target square
+	uint64_t target = (1ULL << to);
+	uint64_t bishopAttacks = bishopLookup[bishopLookupOffsets[to] + _pext_u64(occupied, bishopRays[to])];
+	uint64_t rookAttacks = rookLookup[rookLookupOffsets[to] + _pext_u64(occupied, rookRays[to])];
+	uint64_t attackers = (bishopAttacks & diagonals) | (rookAttacks & straights);
+	attackers |= knightLookup[to] & (pieceBoards[KNIGHT + WHITE] | pieceBoards[KNIGHT + BLACK]);
+	attackers |= kingLookup[to] & (pieceBoards[KING + WHITE] | pieceBoards[KING + BLACK]);
+	attackers |= (((target >> 9) & 0x7f7f7f7f7f7f7f7f) | ((target >> 7) & 0xfefefefefefefefe)) & pieceBoards[PAWN + WHITE];
+	attackers |= (((target << 9) & 0xfefefefefefefefe) | ((target << 7) & 0x7f7f7f7f7f7f7f7f)) & pieceBoards[PAWN + BLACK];
+	attackers &= occupied;
+
+	// Sides alternate recapturing with their least valuable attacker
+	bool side = !color;
+	while (true) {
+		uint64_t sideAttackers = attackers & colorBoards[side];
+		if (!sideAttackers) break;
+
+		// Find least valuable attacker
+		int piece;
+		for (piece = PAWN; piece <= KING; piece += 2) {
+			if (sideAttackers & pieceBoards[piece + side]) break;
+		}
+		occupied ^= (1ULL << _tzcnt_u64(sideAttackers & pieceBoards[piece + side]));
+
+		// Removing the attacker may reveal sliders behind it
+		if (piece == PAWN || piece == BISHOP || piece == QUEEN) {
+			attackers |= bishopLookup[bishopLookupOffsets[to] + _pext_u64(occupied, bishopRays[to])] & diagonals;
+		}
+		if (piece == ROOK || piece == QUEEN) {
+			attackers |= rookLookup[rookLookupOffsets[to] + _pext_u64(occupied, rookRays[to])] & straights;
+		}
+		attackers &= occupied;
+
+		side = !side;
+		balance = -balance - 1 - SEE_VALUES[piece >> 1];
+
+		// Side that just captured is now winning the exchange
+		if (balance >= 0) {
+			// A king can't recapture into a still defended square
+			if (piece == KING && (attackers & colorBoards[side])) side = !side;
+			break;
+		}
+	}
+
+	// The side to move at the end lost the exchange
+	return side != color;
+}
+
 bool Board::kingIsAttacked(bool color) {
     uint64_t kingBoard = pieceBoards[KING + color];
     if (kingBoard == 0) return true; // King is missing, attacked
