@@ -41,7 +41,7 @@ namespace fast {
 
     template<typename T>
     struct lvector {
-        T data[512];
+        T data[1024];
         int curSize = 0;
 
         T &operator[](uint16_t index) {
