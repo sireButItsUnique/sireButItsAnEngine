@@ -58,9 +58,10 @@ namespace Search {
      * @param board The current board state.
      * @param alpha The highest score that the cur player is guranteed
      * @param beta The highest score that the opp player is guranteed. If the score is greater than beta, the search can be pruned since from opp's POV it will be worse than beta.
+     * @param ply Distance from the root, indexes the NNUE accumulator stack
      * @return An integer score representing the evaluation of the board.
      */
-    int32_t finishCaptures(Board& board, int32_t alpha, int32_t beta, int depth);
+    int32_t finishCaptures(Board& board, int32_t alpha, int32_t beta, int ply);
 
     /**
      * @brief Checks if the excluded move is a "singular move" (better than all other moves by a fair bit)

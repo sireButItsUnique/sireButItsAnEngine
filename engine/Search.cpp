@@ -13,9 +13,56 @@ namespace Search {
 
     fast::lvector<uint64_t> threeFoldReps;
 
-    // Accumulation cache for NNUE 
-    int32_t acc[2 * ACC_SIZE];
-    Board& accBoard = *(new Board());
+    // NNUE accumulator stack, one entry per ply. Children are built lazily from their parent
+    constexpr int MAX_PLY = 256;
+    struct AccEntry {
+        Accumulator acc;
+        bool computed; // acc is up to date for the board at this ply
+        uint8_t numSubs, numAdds;
+        AccDelta subs[4], adds[4]; // piece changes from the parent ply
+    };
+    AccEntry accStack[MAX_PLY];
+
+    // Records which pieces changed between parent and child (from the mailboxes), acc gets built later only if needed
+    inline void pushAcc(int ply, Board& parent, Board& child, uint32_t move) {
+        AccEntry& entry = accStack[ply];
+        entry.computed = false;
+        entry.numSubs = entry.numAdds = 0;
+
+        auto diff = [&](int square) {
+            int16_t before = parent.mailbox[square], after = child.mailbox[square];
+            if (before == after) return;
+            if (before < EMPTY) entry.subs[entry.numSubs++] = {before, (int16_t)square};
+            if (after < EMPTY) entry.adds[entry.numAdds++] = {after, (int16_t)square};
+        };
+
+        if (Move::isCastle(move)) {
+            int base = Move::color(move) * 56; // castling only touches the back rank
+            for (int square = base; square < base + 8; square++) diff(square);
+        } else {
+            diff(Move::from(move));
+            diff(Move::to(move));
+            if (Move::isEnpassant(move)) diff(Move::color(move) == WHITE ? Move::to(move) - 8 : Move::to(move) + 8);
+        }
+    }
+
+    // Null move, same pieces as the parent
+    inline void pushNullAcc(int ply) {
+        accStack[ply].computed = false;
+        accStack[ply].numSubs = accStack[ply].numAdds = 0;
+    }
+
+    // Brings the accumulator at this ply up to date (goes back to the last computed ply) and evaluates
+    inline int32_t evaluate(Board& board, int ply) {
+        int base = ply;
+        while (!accStack[base].computed) base--; // ply 0 is always computed
+        for (int p = base + 1; p <= ply; p++) {
+            AccEntry& entry = accStack[p];
+            NNUE::update(accStack[p - 1].acc, entry.acc, entry.subs, entry.numSubs, entry.adds, entry.numAdds);
+            entry.computed = true;
+        }
+        return NNUE::evaluate(accStack[ply].acc, board.turn);
+    }
 
     // Standard move ordering stuff
     uint32_t killer[64][2]; // Killer moves for each depth
@@ -57,11 +104,6 @@ void Search::initSearch(int64_t timeLimit, fast::lvector<uint64_t> threeFoldReps
     memset(killer, 0, sizeof(killer)); // Initialize killer moves to zero
     memset(history, 0, sizeof(history)); // Initialize history table to zero
     memset(excludedMove, 0, sizeof(excludedMove)); // Initialize excluded moves to zero
-
-    // Initialize accBoard to empty board
-    accBoard = Board();
-    accBoard.setFenPos("8/8/8/8/8/8/8/8", "w", "-", "-");
-    NNUE::initAccBias(acc); // Initialize acc layer with bias
 }
 
 void Search::updateHistory(uint32_t move, int32_t bonus) {
@@ -69,7 +111,7 @@ void Search::updateHistory(uint32_t move, int32_t bonus) {
 	history[Move::id(move)] += clamped_bonus - history[Move::id(move)] * abs(clamped_bonus) / MAX_HISTORY; // Update the history value
 }
 
-int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int depth) {
+int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int ply) {
     
     // Time management
     if (Search::ABORT_SEARCH) return 0;
@@ -84,7 +126,7 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
 
     // Initialize evaluation score
     int32_t eval = -INFINITE_SCORE; // Initialize to a very low value
-    int32_t staticEval = NNUE::evalBoardFast(board, acc, accBoard);
+    int32_t staticEval = Search::evaluate(board, ply);
     if (staticEval >= beta) return staticEval;
     if (staticEval > alpha) alpha = staticEval;
     eval = staticEval; // Start with static evaluation since we are not forced to play a capture
@@ -113,9 +155,10 @@ int32_t Search::finishCaptures(Board& board, int32_t alpha, int32_t beta, int de
 
         if (newBoard.pieceBoards[KING + newBoard.turn] == 0) return MATE_SCORE; // Check for checkmate
         if (newBoard.kingIsAttacked(board.turn)) continue; // Skip moves that leave the king in check
+        Search::pushAcc(ply + 1, board, newBoard, move);
 
         // Evaluate the new position
-        int32_t score = -Search::finishCaptures(newBoard, -beta, -alpha, depth + 1); // Negate for minimax
+        int32_t score = -Search::finishCaptures(newBoard, -beta, -alpha, ply + 1); // Negate for minimax
 
         // Prune if move is too good -> opp has a better move last ply
         if (score >= beta) return score;
@@ -145,8 +188,14 @@ bool Search::singularSearch(Board& board, int depth, int ply, vector<vector<uint
 
 int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32_t beta, vector<vector<uint32_t>>& PV, bool isPvNode) {
 
+    // Root board can change between searches, so build its accumulator from scratch
+    if (ply == 0) {
+        NNUE::refresh(board, accStack[0].acc);
+        accStack[0].computed = true;
+    }
+
     // Leaf node, q search
-    if (depth <= 0) return Search::finishCaptures(board, alpha, beta, 0);
+    if (depth <= 0) return Search::finishCaptures(board, alpha, beta, ply);
     
     // Time management
     if (Search::ABORT_SEARCH) return 0;
@@ -192,7 +241,7 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
     if (!Search::inSingularSearch) {
         
         // Get metadata for the current node
-        int32_t staticEval = NNUE::evalBoardFast(board, acc, accBoard);
+        int32_t staticEval = Search::evaluate(board, ply);
         bool pawnEndgame = false;
         for (int i = KNIGHT + WHITE; i <= QUEEN + BLACK; i++) {
             pawnEndgame |= board.pieceBoards[i];
@@ -211,6 +260,7 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
         // Null move pruning
         if (!inCheck && !pawnEndgame && staticEval >= beta) {
             board.makeNullMove(); // Switch turn for null move
+            Search::pushNullAcc(ply + 1);
             int32_t nullMoveScore = -Search::bestMoves(board, max(0, depth - 4), ply + 1, -beta, -alpha, PV, false); // Null move search
             board.makeNullMove(); // Switch back turn
             
@@ -308,6 +358,7 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
             illegals++;
             continue; // Skip moves that leave the king in check
         }
+        Search::pushAcc(ply + 1, board, newBoard, move);
         threeFoldReps.push_back(newBoard.key); // Add the new position to the threefold repetitions
 
         // PV node checking
