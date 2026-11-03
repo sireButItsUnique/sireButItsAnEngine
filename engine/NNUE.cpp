@@ -78,14 +78,14 @@ void NNUE::update(const Accumulator& parent, Accumulator& child, const AccDelta*
         for (int k = 0; k < numSubs; k++) subRows[k] = acc_weights[getWeightIdx(subs[k].piece, subs[k].square, perspective)];
         for (int k = 0; k < numAdds; k++) addRows[k] = acc_weights[getWeightIdx(adds[k].piece, adds[k].square, perspective)];
 
-        const int32_t* src = parent.vals + perspective * ACC_SIZE;
-        int32_t* dst = child.vals + perspective * ACC_SIZE;
+        const int16_t* src = parent.vals + perspective * ACC_SIZE;
+        int16_t* dst = child.vals + perspective * ACC_SIZE;
 
-        // 8 neurons per instruction, int16 weights get widened to int32
-        for (int i = 0; i < ACC_SIZE; i += 8) {
+        // 16 neurons per instruction
+        for (int i = 0; i < ACC_SIZE; i += 16) {
             __m256i v = _mm256_load_si256((const __m256i*)(src + i));
-            for (int k = 0; k < numSubs; k++) v = _mm256_sub_epi32(v, _mm256_cvtepi16_epi32(_mm_load_si128((const __m128i*)(subRows[k] + i))));
-            for (int k = 0; k < numAdds; k++) v = _mm256_add_epi32(v, _mm256_cvtepi16_epi32(_mm_load_si128((const __m128i*)(addRows[k] + i))));
+            for (int k = 0; k < numSubs; k++) v = _mm256_sub_epi16(v, _mm256_load_si256((const __m256i*)(subRows[k] + i)));
+            for (int k = 0; k < numAdds; k++) v = _mm256_add_epi16(v, _mm256_load_si256((const __m256i*)(addRows[k] + i)));
             _mm256_store_si256((__m256i*)(dst + i), v);
         }
     }
@@ -93,17 +93,13 @@ void NNUE::update(const Accumulator& parent, Accumulator& child, const AccDelta*
 
 int32_t NNUE::evaluate(const Accumulator& acc, bool turn) {
     const __m256i clampMin = _mm256_setzero_si256();
-    const __m256i clampMax = _mm256_set1_epi32(QA);
+    const __m256i clampMax = _mm256_set1_epi16(QA);
     __m256i sum = _mm256_setzero_si256();
 
     for (int i = 0; i < ACC_SIZE * 2; i += 16) {
-        // Clamp 16 int32 values to [0, QA] in two halves, then pack to int16 (safe after clamping)
-        __m256i acc1 = _mm256_load_si256((const __m256i*)&acc.vals[i]);
-        __m256i acc2 = _mm256_load_si256((const __m256i*)&acc.vals[i + 8]);
-        acc1 = _mm256_min_epi32(_mm256_max_epi32(acc1, clampMin), clampMax);
-        acc2 = _mm256_min_epi32(_mm256_max_epi32(acc2, clampMin), clampMax);
-        __m256i input = _mm256_packs_epi32(acc1, acc2);
-        input = _mm256_permute4x64_epi64(input, _MM_SHUFFLE(3, 1, 2, 0)); // packs interleaves 128 bit lanes, restore order
+        // Clamp 16 values to [0, QA]
+        __m256i input = _mm256_load_si256((const __m256i*)&acc.vals[i]);
+        input = _mm256_min_epi16(_mm256_max_epi16(input, clampMin), clampMax);
 
         // SCReLU: (x * w) * x. x * w fits in int16 since QA * max|out weight| < 32768
 

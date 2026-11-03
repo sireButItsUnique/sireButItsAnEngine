@@ -14,7 +14,7 @@
  * @brief Hidden layer for both perspectives: [0, ACC_SIZE) = white, [ACC_SIZE, 2 * ACC_SIZE) = black
  */
 struct Accumulator {
-    alignas(32) int32_t vals[2 * ACC_SIZE];
+    alignas(32) int16_t vals[2 * ACC_SIZE];
 };
 
 /**
