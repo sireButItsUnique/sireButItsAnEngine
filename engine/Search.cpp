@@ -249,9 +249,6 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
          
         scored.push_back({score, move});
     }
-    sort(scored.begin(), scored.end(), [](const pair<int32_t, uint32_t>& a, const pair<int32_t, uint32_t>& b) {
-        return a.first > b.first; // Sort in descending order
-    });
 
     // Initialize evaluation score to a very low value
     int32_t eval = -INFINITE_SCORE;
@@ -261,7 +258,12 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
     int illegals = 0;
     for (int idx = 0; idx < scored.size(); ++idx) {
         
-        // Move node setup
+        // Move node setup, lazy sorting
+        int bestMoveIdx = idx;
+        for (int i = idx + 1; i < scored.size(); ++i) {
+            if (scored[i].first > scored[bestMoveIdx].first) bestMoveIdx = i;
+        }
+        swap(scored[idx], scored[bestMoveIdx]); // Swap the best move to the front
         uint32_t move = scored[idx].second;
         int32_t extend = 0; // Number of extensions for this node
 
