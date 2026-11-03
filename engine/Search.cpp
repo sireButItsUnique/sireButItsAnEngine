@@ -266,10 +266,21 @@ int32_t Search::bestMoves(Board& board, int depth, int ply, int32_t alpha, int32
         int32_t extend = 0; // Number of extensions for this node
 
         // Moveloop pruning, possibly lossy (cannot run if singular search), only if we're not being mated
-        if (eval > -MATE_SITUATION && !inCheck && !board.moveIsCapture(move) && !Move::isPromotion(move)) {
+        if (eval > -MATE_SITUATION && !inCheck && !Move::isPromotion(move)) {
 
-            // Late move pruning
-            if (idx > 5 + 3 * depth * depth) break;
+            // Quiet move
+            if (!board.moveIsCapture(move)) {
+                // Late move pruning
+                if (idx > 5 + 3 * depth * depth) break;
+            } 
+            
+            // Capturing move
+            else {
+                // SEE pruning
+                if (depth <= 3) {
+                    if (!board.see(move, -50 * depth)) continue; // Skip if the capture is very unfavorable
+                }
+            }
         }
         
         // Singular extension setup
